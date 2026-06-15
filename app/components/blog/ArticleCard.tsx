@@ -26,7 +26,7 @@ export function ArticleCard({
 
   if (variant === "compact") {
     return (
-      <Link to={articleUrl} className={cn("group block", className)}>
+      <Link to={articleUrl} prefetch="intent" className={cn("group block", className)}>
         <div className="flex gap-4">
           {article.heroImage && (
             <img
@@ -60,7 +60,7 @@ export function ArticleCard({
 
   if (variant === "featured") {
     return (
-      <Link to={articleUrl} className={cn("group block", className)}>
+      <Link to={articleUrl} prefetch="intent" className={cn("group block", className)}>
         <Card variant="elevated" className="overflow-hidden h-full transition-shadow group-hover:shadow-lg">
           {article.heroImage && (
             <img
@@ -105,7 +105,7 @@ export function ArticleCard({
 
   // Default variant
   return (
-    <Link to={articleUrl} className={cn("group block", className)}>
+    <Link to={articleUrl} prefetch="intent" className={cn("group block", className)}>
       <Card variant="bordered" className="overflow-hidden h-full transition-shadow group-hover:shadow-md">
         {article.heroImage && (
           <img
