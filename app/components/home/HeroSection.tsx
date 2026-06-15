@@ -44,6 +44,7 @@ export function HeroSection({ featuredArticle, className }: HeroSectionProps) {
               {/* Category Label */}
               <Link
                 to={`/${article.category.slug}`}
+                prefetch="intent"
                 className="inline-flex items-center px-3 py-1 text-xs font-semibold text-teal-400 bg-teal-400/10 border border-teal-400/30 rounded-full hover:bg-teal-400/20 transition-colors"
               >
                 {article.category.name}
@@ -53,6 +54,7 @@ export function HeroSection({ featuredArticle, className }: HeroSectionProps) {
               <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight text-balance">
                 <Link 
                   to={`/${article.category.slug}/${article.slug}`}
+                  prefetch="intent"
                   className="hover:text-teal-300 transition-colors"
                 >
                   {article.title}

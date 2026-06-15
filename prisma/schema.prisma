@@ -543,6 +543,7 @@ model NewsletterSubscriber {
   emailsClicked   Int       @default(0)
   
   recipients    NewsletterRecipient[]
+  segments      Segment[]            @relation("SegmentSubscribers")
 
   @@index([email])
   @@index([status])
@@ -554,6 +555,25 @@ enum SubscriberStatus {
   UNSUBSCRIBED
   BOUNCED
   COMPLAINED
+}
+
+// ============================================
+// Audience Segment Model
+// Named groups of subscribers for targeted sends.
+// Implicit many-to-many with NewsletterSubscriber and Newsletter.
+// ============================================
+model Segment {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  color       String?  // Optional UI accent (hex)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscribers NewsletterSubscriber[] @relation("SegmentSubscribers")
+  newsletters Newsletter[]           @relation("NewsletterSegments")
+
+  @@index([name])
 }
 
 // ============================================
@@ -592,6 +612,7 @@ model Newsletter {
   
   recipients  NewsletterRecipient[]
   testSends   NewsletterTestSend[]
+  targetSegments Segment[]         @relation("NewsletterSegments")
 
   @@index([status])
   @@index([scheduledFor])

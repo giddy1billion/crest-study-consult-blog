@@ -9,7 +9,7 @@ import type { Route } from "./+types/admin-newsletter.$id";
 import { data, useLoaderData, useFetcher, Link } from "react-router";
 import { requireAdmin } from "~/utils/session.server";
 import { db } from "~/utils/db.server";
-import { sendTestNewsletter, sendNewsletter, checkEmailStatus, resendTestNewsletter } from "~/utils/email.server";
+import { sendTestNewsletter, sendNewsletter, checkEmailStatus, resendTestNewsletter, getSegments } from "~/utils/email.server";
 import { useState } from "react";
 import type { Newsletter, NewsletterTestSend, NewsletterRecipient, NewsletterSubscriber } from "@prisma/client";
 
@@ -116,8 +116,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     testSends: testSendsWithStatus,
   };
 
+  const segments = await getSegments();
+
   return data(
-    { newsletter: newsletterWithStatus },
+    { newsletter: newsletterWithStatus, segments },
     {
       headers: {
         "Cache-Control": "private, max-age=30",
@@ -170,9 +172,11 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   if (intent === "send") {
+    const segmentIds = formData.getAll("segmentIds").map(String).filter(Boolean);
     const result = await sendNewsletter({
       newsletterId: params.id!,
       sendImmediately: true,
+      segmentIds,
     });
 
     return data({
@@ -185,6 +189,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   if (intent === "schedule") {
     const scheduledFor = formData.get("scheduledFor") as string;
+    const segmentIds = formData.getAll("segmentIds").map(String).filter(Boolean);
 
     if (!scheduledFor) {
       return data({ success: false, message: "Please select a date and time" });
@@ -194,6 +199,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       newsletterId: params.id!,
       sendImmediately: false,
       scheduledFor: new Date(scheduledFor),
+      segmentIds,
     });
 
     return data({
@@ -223,12 +229,23 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function AdminNewsletterDetail() {
-  const { newsletter } = useLoaderData<typeof loader>();
+  const { newsletter, segments } = useLoaderData<typeof loader>();
   const actionFetcher = useFetcher();
   const [testEmails, setTestEmails] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [subject, setSubject] = useState(newsletter.subject);
   const [preheader, setPreheader] = useState(newsletter.preheader || "");
+  const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
+
+  const toggleSegment = (id: string) =>
+    setSelectedSegments((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+
+  const audienceLabel =
+    selectedSegments.length === 0
+      ? "all active subscribers"
+      : `${selectedSegments.length} selected segment${selectedSegments.length > 1 ? "s" : ""}`;
 
   const isSubmitting = actionFetcher.state !== "idle";
   const isSent = newsletter.status === "SENT";
@@ -414,16 +431,56 @@ export default function AdminNewsletterDetail() {
 
           <hr className="border-gray-200" />
 
+          {/* Audience targeting */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Audience</h3>
+            <p className="text-sm text-gray-500 mb-3">
+              Leave all unchecked to send to <strong>all active subscribers</strong>, or pick one or
+              more segments to target. This newsletter will go to <strong>{audienceLabel}</strong>.
+            </p>
+            {segments.length === 0 ? (
+              <p className="text-sm text-gray-400">
+                No segments yet. Create segments in the Audience tab to target specific groups.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {segments.map((s) => {
+                  const active = selectedSegments.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleSegment(s.id)}
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                        active
+                          ? "bg-teal-600 text-white border-teal-600"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-teal-400"
+                      }`}
+                    >
+                      <span>{s.name}</span>
+                      <span className={active ? "text-teal-100" : "text-gray-400"}>
+                        {s.subscriberCount}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Send Options */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Send Immediately */}
             <div className="bg-teal-50 rounded-xl p-5">
               <h3 className="font-semibold text-teal-900 mb-2">Send immediately</h3>
               <p className="text-sm text-teal-700 mb-4">
-                Send this newsletter to all active subscribers right now.
+                Send this newsletter to {audienceLabel} right now.
               </p>
               <actionFetcher.Form method="post">
                 <input type="hidden" name="intent" value="send" />
+                {selectedSegments.map((id) => (
+                  <input key={id} type="hidden" name="segmentIds" value={id} />
+                ))}
                 <button
                   type="submit"
                   disabled={isSubmitting || isScheduled}
@@ -438,10 +495,13 @@ export default function AdminNewsletterDetail() {
             <div className="bg-blue-50 rounded-xl p-5">
               <h3 className="font-semibold text-blue-900 mb-2">Schedule for later</h3>
               <p className="text-sm text-blue-700 mb-4">
-                Choose a date and time to send this newsletter.
+                Choose a date and time to send this newsletter to {audienceLabel}.
               </p>
               <actionFetcher.Form method="post" className="space-y-3">
                 <input type="hidden" name="intent" value="schedule" />
+                {selectedSegments.map((id) => (
+                  <input key={id} type="hidden" name="segmentIds" value={id} />
+                ))}
                 <input
                   type="datetime-local"
                   name="scheduledFor"

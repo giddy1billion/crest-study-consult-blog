@@ -57,6 +57,7 @@ export function FeaturedStories({ primary, supporting = [], className }: Feature
           <div className="lg:col-span-2">
             <Link 
               to={`/${primaryArticle.category.slug}/${primaryArticle.slug}`}
+              prefetch="intent"
               className="group block relative h-full min-h-[400px] rounded-2xl overflow-hidden bg-gray-100"
             >
               <img
@@ -106,6 +107,7 @@ export function FeaturedStories({ primary, supporting = [], className }: Feature
               <Link 
                 key={article.slug}
                 to={`/${article.category.slug}/${article.slug}`}
+                prefetch="intent"
                 className="group relative flex-1 min-h-[180px] rounded-xl overflow-hidden bg-gray-100"
               >
                 <img

@@ -86,6 +86,7 @@ export function ResearchModule({ className }: ResearchModuleProps) {
           </div>
           <Link
             to="/study-intelligence"
+            prefetch="intent"
             className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-teal-600 border border-teal-200 bg-white hover:bg-teal-50 rounded-lg transition-colors"
           >
             Research library
@@ -138,6 +139,7 @@ export function ResearchModule({ className }: ResearchModuleProps) {
           <div className="lg:col-span-3">
             <Link 
               to={`/study-intelligence/${report.slug}`}
+              prefetch="intent"
               className="group block h-full bg-white rounded-2xl border border-gray-200 overflow-hidden transition-shadow hover:shadow-lg"
             >
               {/* Report Header */}

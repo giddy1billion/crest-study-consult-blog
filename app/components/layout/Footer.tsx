@@ -20,7 +20,7 @@ export function Footer({ className }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="md:col-span-1">
-            <Link to="/" className="inline-block">
+            <Link to="/" prefetch="intent" className="inline-block">
               <img 
                 src={BRAND.logo} 
                 alt={BRAND.name}
@@ -45,6 +45,7 @@ export function Footer({ className }: FooterProps) {
                 <li key={category.slug}>
                   <Link
                     to={`/${category.slug}`}
+                    prefetch="intent"
                     className="text-sm text-gray-300 hover:text-teal-400 transition-colors"
                   >
                     {category.name}
@@ -63,6 +64,7 @@ export function Footer({ className }: FooterProps) {
               <li>
                 <Link
                   to="/study-intelligence"
+                  prefetch="intent"
                   className="text-sm text-gray-300 hover:text-teal-400 transition-colors"
                 >
                   Research Library
@@ -98,6 +100,7 @@ export function Footer({ className }: FooterProps) {
               <li>
                 <Link
                   to="/privacy"
+                  prefetch="intent"
                   className="text-sm text-gray-300 hover:text-teal-400 transition-colors"
                 >
                   Privacy Policy
@@ -106,6 +109,7 @@ export function Footer({ className }: FooterProps) {
               <li>
                 <Link
                   to="/terms"
+                  prefetch="intent"
                   className="text-sm text-gray-300 hover:text-teal-400 transition-colors"
                 >
                   Terms of Use

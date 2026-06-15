@@ -8,6 +8,7 @@
 import { Resend } from "resend";
 import { db as prisma } from "~/utils/db.server";
 import { randomUUID } from "crypto";
+import { buildUnsubscribeUrl } from "~/utils/unsubscribe-token.server";
 
 // Initialize Resend client
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -96,7 +97,7 @@ export async function subscribeToNewsletter(
       to: email,
       replyTo: EMAIL_CONFIG.replyTo,
       subject: "Welcome to Crest Study Consult Research",
-      html: getWelcomeEmailHtml(firstName),
+      html: getWelcomeEmailHtml(firstName, email),
     });
 
     return { 
@@ -252,8 +253,11 @@ function getAdminOtpEmailHtml({
 /**
  * Welcome email HTML template
  */
-function getWelcomeEmailHtml(firstName?: string): string {
+function getWelcomeEmailHtml(firstName?: string, email?: string): string {
   const greeting = firstName ? `Hi ${firstName},` : "Welcome,";
+  const unsubscribeUrl = email
+    ? buildUnsubscribeUrl(email, "https://blog.creststudyconsult.com")
+    : `https://blog.creststudyconsult.com/unsubscribe`;
   
   return `
 <!DOCTYPE html>
@@ -307,7 +311,7 @@ function getWelcomeEmailHtml(firstName?: string): string {
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
                 You're receiving this because you subscribed at blog.creststudyconsult.com.
-                <a href="https://blog.creststudyconsult.com/unsubscribe" style="color: #4f9a2a;">Unsubscribe</a>
+                <a href="${unsubscribeUrl}" style="color: #4f9a2a;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -329,13 +333,18 @@ export function getNewArticleEmailHtml({
   url,
   category,
   readingTime,
+  email,
 }: {
   title: string;
   excerpt: string;
   url: string;
   category: string;
   readingTime: number;
+  email?: string;
 }): string {
+  const unsubscribeUrl = email
+    ? buildUnsubscribeUrl(email, "https://blog.creststudyconsult.com")
+    : `https://blog.creststudyconsult.com/unsubscribe`;
   return `
 <!DOCTYPE html>
 <html>
@@ -381,7 +390,7 @@ export function getNewArticleEmailHtml({
                 Crest Study Consult LTD
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                <a href="https://blog.creststudyconsult.com/unsubscribe" style="color: #4f9a2a;">Unsubscribe</a> · 
+                <a href="${unsubscribeUrl}" style="color: #4f9a2a;">Unsubscribe</a> · 
                 <a href="https://blog.creststudyconsult.com" style="color: #4f9a2a;">View in browser</a>
               </p>
             </td>
@@ -814,6 +823,490 @@ export async function getSubscriberStats(): Promise<{
   return { total, active, unsubscribed, bounced };
 }
 
+// ============================================
+// AUDIENCE & SEGMENT MANAGEMENT
+// ============================================
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export type AudienceContact = {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  status: string;
+  source: string | null;
+  subscribedAt: Date;
+  segments: { id: string; name: string; color: string | null }[];
+};
+
+export type SegmentSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  subscriberCount: number;
+  createdAt: Date;
+};
+
+/**
+ * List all segments with their active subscriber counts.
+ */
+export async function getSegments(): Promise<SegmentSummary[]> {
+  const segments = await prisma.segment.findMany({
+    orderBy: { name: "asc" },
+    include: { _count: { select: { subscribers: true } } },
+  });
+
+  return segments.map((s) => ({
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    color: s.color,
+    subscriberCount: s._count.subscribers,
+    createdAt: s.createdAt,
+  }));
+}
+
+/**
+ * Create a new segment. Returns the created segment or an error.
+ */
+export async function createSegment({
+  name,
+  description,
+  color,
+}: {
+  name: string;
+  description?: string | null;
+  color?: string | null;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { success: false, error: "Segment name is required" };
+  }
+
+  try {
+    const existing = await prisma.segment.findUnique({ where: { name: trimmed } });
+    if (existing) {
+      return { success: false, error: `A segment named "${trimmed}" already exists` };
+    }
+
+    const segment = await prisma.segment.create({
+      data: {
+        name: trimmed,
+        description: description?.trim() || null,
+        color: color?.trim() || null,
+      },
+    });
+    return { success: true, id: segment.id };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[createSegment] Failed:", error);
+    return { success: false, error: `Failed to create segment: ${message}` };
+  }
+}
+
+/**
+ * Delete a segment (does not delete the subscribers, only the grouping).
+ */
+export async function deleteSegment(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await prisma.segment.delete({ where: { id } });
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[deleteSegment] Failed:", error);
+    return { success: false, error: `Failed to delete segment: ${message}` };
+  }
+}
+
+/**
+ * Add or update a single contact, optionally assigning to segments.
+ */
+export async function addContact({
+  email,
+  firstName,
+  lastName,
+  segmentIds = [],
+  source = "manual",
+}: {
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  segmentIds?: string[];
+  source?: string;
+}): Promise<{ success: boolean; created?: boolean; error?: string }> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    return { success: false, error: "Please enter a valid email address" };
+  }
+
+  try {
+    const existing = await prisma.newsletterSubscriber.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    const segmentConnect = segmentIds.length
+      ? { connect: segmentIds.map((sid) => ({ id: sid })) }
+      : undefined;
+
+    if (existing) {
+      await prisma.newsletterSubscriber.update({
+        where: { id: existing.id },
+        data: {
+          firstName: firstName?.trim() || existing.firstName,
+          lastName: lastName?.trim() || existing.lastName,
+          // Re-activate if they were previously removed
+          status: existing.status === "ACTIVE" ? existing.status : "ACTIVE",
+          segments: segmentConnect,
+        },
+      });
+      return { success: true, created: false };
+    }
+
+    await prisma.newsletterSubscriber.create({
+      data: {
+        email: normalizedEmail,
+        firstName: firstName?.trim() || null,
+        lastName: lastName?.trim() || null,
+        status: "ACTIVE",
+        source,
+        segments: segmentConnect,
+      },
+    });
+    return { success: true, created: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[addContact] Failed:", error);
+    return { success: false, error: `Failed to add contact: ${message}` };
+  }
+}
+
+/**
+ * Parse raw CSV text into contact rows.
+ * Accepts headers (email, firstName/first_name/first name, lastName/last_name)
+ * or simple "email,firstName,lastName" positional rows.
+ */
+export function parseContactsCsv(csv: string): {
+  rows: { email: string; firstName: string | null; lastName: string | null }[];
+  invalidLines: string[];
+} {
+  const rows: { email: string; firstName: string | null; lastName: string | null }[] = [];
+  const invalidLines: string[] = [];
+
+  const lines = csv
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  if (lines.length === 0) return { rows, invalidLines };
+
+  // Detect a header row
+  const splitLine = (line: string) =>
+    line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+
+  const firstCols = splitLine(lines[0]).map((c) => c.toLowerCase());
+  let emailIdx = 0;
+  let firstIdx = 1;
+  let lastIdx = 2;
+  let startRow = 0;
+
+  const looksLikeHeader = firstCols.some((c) =>
+    ["email", "e-mail", "firstname", "first name", "first_name", "lastname", "last name", "last_name"].includes(c)
+  );
+
+  if (looksLikeHeader) {
+    emailIdx = firstCols.findIndex((c) => c === "email" || c === "e-mail");
+    firstIdx = firstCols.findIndex((c) => ["firstname", "first name", "first_name", "name"].includes(c));
+    lastIdx = firstCols.findIndex((c) => ["lastname", "last name", "last_name"].includes(c));
+    if (emailIdx === -1) emailIdx = 0;
+    startRow = 1;
+  }
+
+  for (let i = startRow; i < lines.length; i++) {
+    const cols = splitLine(lines[i]);
+    const email = (cols[emailIdx] || "").toLowerCase();
+    if (!EMAIL_REGEX.test(email)) {
+      invalidLines.push(lines[i]);
+      continue;
+    }
+    rows.push({
+      email,
+      firstName: firstIdx >= 0 ? cols[firstIdx]?.trim() || null : null,
+      lastName: lastIdx >= 0 ? cols[lastIdx]?.trim() || null : null,
+    });
+  }
+
+  return { rows, invalidLines };
+}
+
+/**
+ * Bulk import contacts (from CSV rows or a pasted list).
+ * Deduplicates by email, optionally assigns all to the given segments.
+ */
+export async function importContacts({
+  rows,
+  segmentIds = [],
+  source = "import",
+}: {
+  rows: { email: string; firstName?: string | null; lastName?: string | null }[];
+  segmentIds?: string[];
+  source?: string;
+}): Promise<{
+  success: boolean;
+  added: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+}> {
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  // Deduplicate within the batch by email (last wins for names)
+  const byEmail = new Map<string, { email: string; firstName?: string | null; lastName?: string | null }>();
+  for (const row of rows) {
+    const email = row.email?.trim().toLowerCase();
+    if (!email || !EMAIL_REGEX.test(email)) {
+      skipped++;
+      continue;
+    }
+    byEmail.set(email, { ...row, email });
+  }
+
+  for (const row of byEmail.values()) {
+    const result = await addContact({
+      email: row.email,
+      firstName: row.firstName ?? null,
+      lastName: row.lastName ?? null,
+      segmentIds,
+      source,
+    });
+    if (!result.success) {
+      errors.push(`${row.email}: ${result.error}`);
+      continue;
+    }
+    if (result.created) added++;
+    else updated++;
+  }
+
+  return { success: errors.length === 0, added, updated, skipped, errors };
+}
+
+/**
+ * Assign existing subscribers to a segment.
+ */
+export async function assignToSegment(
+  subscriberIds: string[],
+  segmentId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await prisma.segment.update({
+      where: { id: segmentId },
+      data: { subscribers: { connect: subscriberIds.map((id) => ({ id })) } },
+    });
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[assignToSegment] Failed:", error);
+    return { success: false, error: `Failed to assign to segment: ${message}` };
+  }
+}
+
+/**
+ * Remove a subscriber from a segment.
+ */
+export async function removeFromSegment(
+  subscriberId: string,
+  segmentId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await prisma.segment.update({
+      where: { id: segmentId },
+      data: { subscribers: { disconnect: { id: subscriberId } } },
+    });
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[removeFromSegment] Failed:", error);
+    return { success: false, error: `Failed to remove from segment: ${message}` };
+  }
+}
+
+/**
+ * Update a contact's status (e.g. unsubscribe) or delete it.
+ */
+export async function setContactStatus(
+  subscriberId: string,
+  status: "ACTIVE" | "UNSUBSCRIBED" | "BOUNCED" | "COMPLAINED"
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await prisma.newsletterSubscriber.update({
+      where: { id: subscriberId },
+      data: {
+        status,
+        unsubscribedAt: status === "UNSUBSCRIBED" ? new Date() : null,
+      },
+    });
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[setContactStatus] Failed:", error);
+    return { success: false, error: `Failed to update contact: ${message}` };
+  }
+}
+
+export async function deleteContact(
+  subscriberId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await prisma.newsletterSubscriber.delete({ where: { id: subscriberId } });
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[deleteContact] Failed:", error);
+    return { success: false, error: `Failed to delete contact: ${message}` };
+  }
+}
+
+/**
+ * Bulk-update status for many subscribers at once.
+ */
+export async function bulkSetContactStatus(
+  subscriberIds: string[],
+  status: "ACTIVE" | "UNSUBSCRIBED" | "BOUNCED" | "COMPLAINED"
+): Promise<{ success: boolean; count: number; error?: string }> {
+  const ids = subscriberIds.filter(Boolean);
+  if (ids.length === 0) {
+    return { success: false, count: 0, error: "No contacts selected" };
+  }
+  try {
+    const result = await prisma.newsletterSubscriber.updateMany({
+      where: { id: { in: ids } },
+      data: {
+        status,
+        unsubscribedAt: status === "UNSUBSCRIBED" ? new Date() : null,
+      },
+    });
+    return { success: true, count: result.count };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[bulkSetContactStatus] Failed:", error);
+    return { success: false, count: 0, error: `Failed to update contacts: ${message}` };
+  }
+}
+
+/**
+ * Bulk-delete many subscribers at once.
+ */
+export async function bulkDeleteContacts(
+  subscriberIds: string[]
+): Promise<{ success: boolean; count: number; error?: string }> {
+  const ids = subscriberIds.filter(Boolean);
+  if (ids.length === 0) {
+    return { success: false, count: 0, error: "No contacts selected" };
+  }
+  try {
+    const result = await prisma.newsletterSubscriber.deleteMany({
+      where: { id: { in: ids } },
+    });
+    return { success: true, count: result.count };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[bulkDeleteContacts] Failed:", error);
+    return { success: false, count: 0, error: `Failed to delete contacts: ${message}` };
+  }
+}
+
+/**
+ * Paginated, searchable, filterable audience list for the Audience tab.
+ */
+export async function getAudience({
+  search,
+  segmentId,
+  status,
+  page = 1,
+  pageSize = 25,
+}: {
+  search?: string;
+  segmentId?: string;
+  status?: "ACTIVE" | "UNSUBSCRIBED" | "BOUNCED" | "COMPLAINED";
+  page?: number;
+  pageSize?: number;
+} = {}): Promise<{ contacts: AudienceContact[]; total: number; page: number; pageSize: number }> {
+  const where: Record<string, unknown> = {};
+
+  if (search?.trim()) {
+    const q = search.trim();
+    where.OR = [
+      { email: { contains: q, mode: "insensitive" } },
+      { firstName: { contains: q, mode: "insensitive" } },
+      { lastName: { contains: q, mode: "insensitive" } },
+    ];
+  }
+  if (segmentId) {
+    where.segments = { some: { id: segmentId } };
+  }
+  if (status) {
+    where.status = status;
+  }
+
+  const safePage = Math.max(1, page);
+
+  const [contacts, total] = await Promise.all([
+    prisma.newsletterSubscriber.findMany({
+      where,
+      orderBy: { subscribedAt: "desc" },
+      skip: (safePage - 1) * pageSize,
+      take: pageSize,
+      include: { segments: { select: { id: true, name: true, color: true } } },
+    }),
+    prisma.newsletterSubscriber.count({ where }),
+  ]);
+
+  return {
+    contacts: contacts.map((c) => ({
+      id: c.id,
+      email: c.email,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      status: c.status,
+      source: c.source,
+      subscribedAt: c.subscribedAt,
+      segments: c.segments,
+    })),
+    total,
+    page: safePage,
+    pageSize,
+  };
+}
+
+/**
+ * Audience statistics from the NewsletterSubscriber table (the table that
+ * newsletters are actually delivered to).
+ */
+export async function getAudienceStats(): Promise<{
+  total: number;
+  active: number;
+  unsubscribed: number;
+  bounced: number;
+  segments: number;
+}> {
+  const [total, active, unsubscribed, bounced, segments] = await Promise.all([
+    prisma.newsletterSubscriber.count(),
+    prisma.newsletterSubscriber.count({ where: { status: "ACTIVE" } }),
+    prisma.newsletterSubscriber.count({ where: { status: "UNSUBSCRIBED" } }),
+    prisma.newsletterSubscriber.count({ where: { status: "BOUNCED" } }),
+    prisma.segment.count(),
+  ]);
+
+  return { total, active, unsubscribed, bounced, segments };
+}
+
 /**
  * Send a test newsletter to specific email addresses
  */
@@ -991,10 +1484,12 @@ export async function sendNewsletter({
   newsletterId,
   sendImmediately = true,
   scheduledFor,
+  segmentIds,
 }: {
   newsletterId: string;
   sendImmediately?: boolean;
   scheduledFor?: Date;
+  segmentIds?: string[];
 }): Promise<{ success: boolean; sentCount?: number; error?: string }> {
   try {
     const newsletter = await prisma.newsletter.findUnique({
@@ -1006,31 +1501,52 @@ export async function sendNewsletter({
       return { success: false, error: "Newsletter not found" };
     }
 
-    // If scheduling for later, just update status
+    // Normalize segment targeting (empty array or undefined = all subscribers)
+    const targetSegmentIds = (segmentIds ?? []).filter(Boolean);
+
+    // If scheduling for later, just update status (persist target segments too)
     if (!sendImmediately && scheduledFor) {
       await prisma.newsletter.update({
         where: { id: newsletterId },
         data: {
           status: "SCHEDULED",
           scheduledFor,
+          targetSegments: targetSegmentIds.length
+            ? { set: targetSegmentIds.map((id) => ({ id })) }
+            : { set: [] },
         },
       });
       return { success: true, sentCount: 0 };
     }
 
-    // Get all active subscribers
+    // Get active subscribers — scoped to the chosen segments if any
     const subscribers = await prisma.newsletterSubscriber.findMany({
-      where: { status: "ACTIVE" },
+      where: {
+        status: "ACTIVE",
+        ...(targetSegmentIds.length
+          ? { segments: { some: { id: { in: targetSegmentIds } } } }
+          : {}),
+      },
     });
 
     if (subscribers.length === 0) {
-      return { success: false, error: "No active subscribers" };
+      return {
+        success: false,
+        error: targetSegmentIds.length
+          ? "No active subscribers in the selected segment(s)"
+          : "No active subscribers",
+      };
     }
 
-    // Update newsletter status to SENDING
+    // Record which segments this campaign targeted
     await prisma.newsletter.update({
       where: { id: newsletterId },
-      data: { status: "SENDING" },
+      data: {
+        status: "SENDING",
+        targetSegments: targetSegmentIds.length
+          ? { set: targetSegmentIds.map((id) => ({ id })) }
+          : { set: [] },
+      },
     });
 
     let sentCount = 0;
@@ -1055,6 +1571,7 @@ export async function sendNewsletter({
           trackingId,
           preheader: newsletter.preheader || undefined,
           subscriberName: subscriber.firstName || undefined,
+          subscriberEmail: subscriber.email,
         });
 
         await resend.emails.send({
@@ -1240,6 +1757,182 @@ export async function recordNewsletterClick(trackingId: string, url: string): Pr
 }
 
 /**
+ * Look up the subscription status for an email across both subscriber tables.
+ * Used by the public /unsubscribe page to render the correct state without
+ * mutating anything (safe for GET requests / email-scanner prefetch).
+ */
+export type EmailSubscriptionState = "not-found" | "active" | "unsubscribed";
+
+export async function getSubscriberStatusByEmail(email: string): Promise<{
+  state: EmailSubscriptionState;
+  firstName: string | null;
+}> {
+  const normalized = email.trim().toLowerCase();
+  if (!EMAIL_REGEX.test(normalized)) {
+    return { state: "not-found", firstName: null };
+  }
+
+  const [newsletterSub, legacySub] = await Promise.all([
+    prisma.newsletterSubscriber.findUnique({ where: { email: normalized } }),
+    prisma.subscriber.findUnique({ where: { email: normalized } }),
+  ]);
+
+  if (!newsletterSub && !legacySub) {
+    return { state: "not-found", firstName: null };
+  }
+
+  const isActive =
+    (newsletterSub && newsletterSub.status === "ACTIVE") ||
+    (legacySub && legacySub.isActive);
+
+  return {
+    state: isActive ? "active" : "unsubscribed",
+    firstName: newsletterSub?.firstName ?? null,
+  };
+}
+
+/**
+ * Unsubscribe an email across both subscriber tables and Resend.
+ * Idempotent — safe to call when already unsubscribed.
+ */
+export async function unsubscribeByEmail(
+  email: string,
+  reason?: string | null
+): Promise<{ success: boolean; state: EmailSubscriptionState; error?: string }> {
+  const normalized = email.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalized)) {
+    return { success: false, state: "not-found", error: "Please provide a valid email address" };
+  }
+
+  try {
+    const [newsletterSub, legacySub] = await Promise.all([
+      prisma.newsletterSubscriber.findUnique({ where: { email: normalized } }),
+      prisma.subscriber.findUnique({ where: { email: normalized } }),
+    ]);
+
+    if (!newsletterSub && !legacySub) {
+      return { success: false, state: "not-found", error: "We couldn't find that email on our list" };
+    }
+
+    const now = new Date();
+    const tasks: Promise<unknown>[] = [];
+
+    if (newsletterSub) {
+      tasks.push(
+        prisma.newsletterSubscriber.update({
+          where: { id: newsletterSub.id },
+          data: {
+            status: "UNSUBSCRIBED",
+            unsubscribedAt: now,
+            ...(reason ? { source: `unsubscribe:${reason}`.slice(0, 191) } : {}),
+          },
+        })
+      );
+
+      if (newsletterSub.resendId && EMAIL_CONFIG.newsletterListId) {
+        tasks.push(
+          resend.contacts
+            .update({
+              id: newsletterSub.resendId,
+              audienceId: EMAIL_CONFIG.newsletterListId,
+              unsubscribed: true,
+            })
+            .catch((err: unknown) => {
+              console.error("[unsubscribeByEmail] Resend update failed:", err);
+            })
+        );
+      }
+    }
+
+    if (legacySub) {
+      tasks.push(
+        prisma.subscriber.update({
+          where: { id: legacySub.id },
+          data: { isActive: false, unsubscribedAt: now },
+        })
+      );
+    }
+
+    await Promise.all(tasks);
+
+    return { success: true, state: "unsubscribed" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[unsubscribeByEmail] Failed:", error);
+    return { success: false, state: "active", error: `Failed to unsubscribe: ${message}` };
+  }
+}
+
+/**
+ * Re-subscribe an email (undo an unsubscribe) across both tables and Resend.
+ */
+export async function resubscribeByEmail(
+  email: string
+): Promise<{ success: boolean; state: EmailSubscriptionState; error?: string }> {
+  const normalized = email.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalized)) {
+    return { success: false, state: "not-found", error: "Please provide a valid email address" };
+  }
+
+  try {
+    const [newsletterSub, legacySub] = await Promise.all([
+      prisma.newsletterSubscriber.findUnique({ where: { email: normalized } }),
+      prisma.subscriber.findUnique({ where: { email: normalized } }),
+    ]);
+
+    if (!newsletterSub && !legacySub) {
+      await prisma.subscriber.create({
+        data: { email: normalized, source: "resubscribe", isActive: true },
+      });
+      return { success: true, state: "active" };
+    }
+
+    const tasks: Promise<unknown>[] = [];
+
+    if (newsletterSub) {
+      tasks.push(
+        prisma.newsletterSubscriber.update({
+          where: { id: newsletterSub.id },
+          data: { status: "ACTIVE", unsubscribedAt: null },
+        })
+      );
+      if (newsletterSub.resendId && EMAIL_CONFIG.newsletterListId) {
+        tasks.push(
+          resend.contacts
+            .update({
+              id: newsletterSub.resendId,
+              audienceId: EMAIL_CONFIG.newsletterListId,
+              unsubscribed: false,
+            })
+            .catch((err: unknown) => {
+              console.error("[resubscribeByEmail] Resend update failed:", err);
+            })
+        );
+      }
+    }
+
+    if (legacySub) {
+      tasks.push(
+        prisma.subscriber.update({
+          where: { id: legacySub.id },
+          data: { isActive: true, unsubscribedAt: null, subscribedAt: new Date() },
+        })
+      );
+    }
+
+    await Promise.all(tasks);
+
+    return { success: true, state: "active" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[resubscribeByEmail] Failed:", error);
+    return { success: false, state: "unsubscribed", error: `Failed to re-subscribe: ${message}` };
+  }
+}
+
+/**
  * Process newsletter unsubscribe
  */
 export async function processNewsletterUnsubscribe(trackingId: string): Promise<boolean> {
@@ -1289,6 +1982,7 @@ export function getNewsletterHtml({
   trackingId,
   preheader,
   subscriberName,
+  subscriberEmail,
 }: {
   post: { 
     title: string; 
@@ -1304,6 +1998,7 @@ export function getNewsletterHtml({
   trackingId: string | null;
   preheader?: string;
   subscriberName?: string;
+  subscriberEmail?: string;
 }): string {
   const greeting = subscriberName ? `Hi ${subscriberName},` : "Hello,";
   const articleUrl = `${BASE_URL}/${post.category.slug}/${post.slug}`;
@@ -1313,9 +2008,14 @@ export function getNewsletterHtml({
     ? `${BASE_URL}/api/newsletter-click?t=${trackingId}&url=${encodeURIComponent(articleUrl)}`
     : articleUrl;
   
-  const unsubscribeUrl = trackingId 
-    ? `${BASE_URL}/api/newsletter-unsubscribe/${trackingId}`
-    : `${BASE_URL}/unsubscribe`;
+  // Unsubscribe link points to the signed, confirmation-based page.
+  // Prefer the email-signed URL (anti-prefetch + tamper-proof); fall back to
+  // the legacy one-click tracking endpoint only when no email is available.
+  const unsubscribeUrl = subscriberEmail
+    ? buildUnsubscribeUrl(subscriberEmail, BASE_URL)
+    : trackingId
+      ? `${BASE_URL}/api/newsletter-unsubscribe/${trackingId}`
+      : `${BASE_URL}/unsubscribe`;
 
   // Tracking pixel (1x1 transparent GIF)
   const trackingPixel = trackingId 

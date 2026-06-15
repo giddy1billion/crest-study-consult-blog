@@ -34,6 +34,9 @@ export default [
   
   // Search page
   route("search", "routes/search.tsx"),
+
+  // Newsletter subscription management (public)
+  route("unsubscribe", "routes/unsubscribe.tsx"),
   
   // Comment RSS feeds
   route("feed/comments/:slug", "routes/feed.comments.$slug.ts"),

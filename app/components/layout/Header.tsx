@@ -67,6 +67,7 @@ export function Header({ className }: HeaderProps) {
           {/* Logo / Wordmark */}
           <Link 
             to="/" 
+            prefetch="intent"
             className="flex items-center gap-2 font-semibold text-gray-900 hover:text-teal-600 transition-colors"
           >
             <img 
@@ -118,6 +119,7 @@ export function Header({ className }: HeaderProps) {
                 <Link
                   key={category.slug}
                   to={`/${category.slug}`}
+                  prefetch="intent"
                   className={cn(
                     "flex-shrink-0 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap",
                     isActive
