@@ -46,9 +46,28 @@ export function OrganizationSchema() {
     },
     areaServed: {
       "@type": "Place",
-      name: "Africa",
+      name: "Worldwide",
     },
-    sameAs: [BRAND.linkedin, BRAND.twitter, BRAND.productUrl],
+    email: BRAND.email,
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        telephone: BRAND.phoneNigeria,
+        email: BRAND.email,
+        areaServed: "NG",
+        availableLanguage: "en",
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        telephone: BRAND.phoneUK,
+        email: BRAND.email,
+        areaServed: "GB",
+        availableLanguage: "en",
+      },
+    ],
+    sameAs: [BRAND.linkedin, BRAND.instagram, BRAND.tiktok, BRAND.productUrl],
   };
 
   return <JsonLd data={data} />;

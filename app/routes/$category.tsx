@@ -248,7 +248,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       {/* OrganizationSchema handled by root.tsx */}
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 flex items-center justify-center py-20 sm:py-28">
           <div className="text-center px-4">
             <h1 className="text-4xl font-bold text-gray-900">Category not found</h1>
             <p className="mt-4 text-gray-600 max-w-md mx-auto">

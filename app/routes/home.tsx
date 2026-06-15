@@ -46,8 +46,6 @@ export function meta({}: Route.MetaArgs) {
     
     // Twitter Card
     { name: "twitter:card", content: SEO_DEFAULTS.twitterCard },
-    { name: "twitter:site", content: BRAND.twitterHandle },
-    { name: "twitter:creator", content: BRAND.twitterHandle },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: BRAND.ogImage },

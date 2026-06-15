@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { cn } from "~/utils/cn";
-import { BRAND, CATEGORIES } from "~/utils/constants";
+import { BRAND, CATEGORIES, CONSULTATION_WHATSAPP_URL } from "~/utils/constants";
 
 interface FooterProps {
   className?: string;
@@ -72,7 +72,7 @@ export function Footer({ className }: FooterProps) {
               </li>
               <li>
                 <a
-                  href={BRAND.productUrl}
+                  href={CONSULTATION_WHATSAPP_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-300 hover:text-teal-400 transition-colors"
@@ -98,22 +98,24 @@ export function Footer({ className }: FooterProps) {
             </h3>
             <ul className="space-y-3">
               <li>
-                <Link
-                  to="/privacy"
-                  prefetch="intent"
+                <a
+                  href="https://www.creststudyconsult.com/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-gray-300 hover:text-teal-400 transition-colors"
                 >
                   Privacy Policy
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
-                  to="/terms"
-                  prefetch="intent"
+                <a
+                  href="https://www.creststudyconsult.com/terms-of-use"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-gray-300 hover:text-teal-400 transition-colors"
                 >
                   Terms of Use
-                </Link>
+                </a>
               </li>
               <li>
                 <a
@@ -123,6 +125,32 @@ export function Footer({ className }: FooterProps) {
                   className="text-sm text-gray-300 hover:text-teal-400 transition-colors inline-flex items-center gap-1"
                 >
                   LinkedIn
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a
+                  href={BRAND.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-gray-300 hover:text-teal-400 transition-colors inline-flex items-center gap-1"
+                >
+                  Instagram
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a
+                  href={BRAND.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-gray-300 hover:text-teal-400 transition-colors inline-flex items-center gap-1"
+                >
+                  TikTok
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>

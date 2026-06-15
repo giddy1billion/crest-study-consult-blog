@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { cn } from "~/utils/cn";
-import { BRAND, CATEGORIES } from "~/utils/constants";
+import { BRAND, CATEGORIES, CONSULTATION_WHATSAPP_URL } from "~/utils/constants";
 import { SearchModal } from "./SearchModal";
 import { NavigationProgress } from "./NavigationProgress";
 
@@ -98,7 +98,7 @@ export function Header({ className }: HeaderProps) {
 
             {/* CTA Button */}
             <a
-              href={BRAND.productUrl}
+              href={CONSULTATION_WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"

@@ -14,7 +14,7 @@ import {
 import { CommentsSection } from "~/components/comments";
 import { NewsletterForm } from "~/components/forms";
 import { ArticleSchema, FAQSchema, BreadcrumbSchema } from "~/components/seo";
-import { BRAND, CATEGORIES, SEO_DEFAULTS, CACHE_HEADERS } from "~/utils/constants";
+import { BRAND, CATEGORIES, SEO_DEFAULTS, CACHE_HEADERS, CONSULTATION_WHATSAPP_URL } from "~/utils/constants";
 import { getArticleBySlug, getRelatedArticles as getRelatedArticlesFromDb } from "~/utils/queries.server";
 import { parseMarkdown } from "~/utils/markdown.server";
 import { useArticleStats } from "~/hooks";
@@ -346,17 +346,28 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                       <h3 className="text-xl font-bold text-gray-900">
                         {(article.ctaBlock as { headline: string }).headline}
                       </h3>
-                      <a
-                        href={(article.ctaBlock as { ctaLink: string }).ctaLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        {(article.ctaBlock as { ctaText: string }).ctaText}
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
+                      {(() => {
+                        const cta = article.ctaBlock as { ctaLink?: string; ctaText: string };
+                        // Route consultation CTAs (links to the consultancy site) to WhatsApp.
+                        const isConsultation =
+                          !cta.ctaLink ||
+                          (cta.ctaLink.includes("creststudyconsult.com") &&
+                            !cta.ctaLink.includes("blog.creststudyconsult.com"));
+                        const href = isConsultation ? CONSULTATION_WHATSAPP_URL : cta.ctaLink!;
+                        return (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            {cta.ctaText}
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        );
+                      })()}
                     </div>
                   )}
 
@@ -492,7 +503,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       {/* OrganizationSchema handled by root.tsx */}
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 flex items-center justify-center py-20 sm:py-28">
           <div className="text-center px-4">
             <h1 className="text-4xl font-bold text-gray-900">Article not found</h1>
             <p className="mt-4 text-gray-600 max-w-md mx-auto">

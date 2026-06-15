@@ -6,9 +6,6 @@
  * students from first contact to full settlement in their chosen institution
  * and destination. The blog at blog.creststudyconsult.com is the education
  * intelligence layer of the brand.
- *
- * NOTE: Values marked `// TODO: confirm` are placeholders — confirm the real
- * social handles and head-office location before launch.
  */
 export const BRAND = {
   /** Full brand name — always used in full, never "Crest" alone */
@@ -28,10 +25,20 @@ export const BRAND = {
   domain: "blog.creststudyconsult.com",
   url: "https://blog.creststudyconsult.com",
   productUrl: "https://creststudyconsult.com",
-  location: "Lagos, Nigeria", // TODO: confirm head-office location
-  linkedin: "https://www.linkedin.com/company/crest-study-consult", // TODO: confirm
-  twitter: "https://x.com/creststudyconsult", // TODO: confirm
-  twitterHandle: "@creststudyconsult", // TODO: confirm
+  location: "Nigeria",
+
+  /** Contact */
+  email: "info@creststudyconsult.com",
+  phoneNigeria: "+2349048510888",
+  phoneUK: "+447480648865",
+  whatsappNumber: "+2349048510888",
+  whatsapp: "https://wa.me/2349048510888",
+
+  /** Social profiles */
+  linkedin: "https://www.linkedin.com/company/creststudyconsult",
+  instagram: "https://www.instagram.com/creststudyconsult",
+  tiktok: "https://www.tiktok.com/@creststudy.consult",
+
   tagline: "Study abroad dreams made reality.",
   description:
     "Crest Study Consult is an international education consultancy guiding students from first contact to full settlement abroad — with trusted guidance, expert counselling, and personalized support across admissions, visas, and scholarships.",
@@ -40,6 +47,21 @@ export const BRAND = {
   favicon: "https://blog.creststudyconsult.com/favicon.svg",
   ogImage: "https://blog.creststudyconsult.com/og-image.png",
 } as const;
+
+/**
+ * WhatsApp Consultation
+ *
+ * Build a WhatsApp deep link to the consultancy with a pre-filled message.
+ * Used by every "Book a consultation" CTA so enquiries open directly in chat.
+ */
+export function buildWhatsAppUrl(message: string): string {
+  return `${BRAND.whatsapp}?text=${encodeURIComponent(message)}`;
+}
+
+/** Canonical "Book a consultation" WhatsApp link with a pre-filled enquiry. */
+export const CONSULTATION_WHATSAPP_URL = buildWhatsAppUrl(
+  "Hello there! I would like to inquire about "
+);
 
 /**
  * Mission, Vision & Objective

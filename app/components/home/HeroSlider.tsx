@@ -347,9 +347,10 @@ function Slide({
             >
               <Link
                 to={`/${article.category.slug}`}
-                className="inline-flex items-center px-3 py-1 text-xs font-semibold text-teal-400 bg-teal-400/10 border border-teal-400/30 rounded-full hover:bg-teal-400/20 transition-colors"
+                className="group/badge inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-white bg-teal-600/90 rounded-full ring-1 ring-white/25 shadow-lg shadow-black/20 backdrop-blur-sm hover:bg-teal-600 hover:ring-white/40 transition-all"
                 tabIndex={isActive ? 0 : -1}
               >
+                <span className="w-1.5 h-1.5 rounded-full bg-gold-400 shadow-[0_0_8px_rgba(224,160,42,0.8)]" />
                 {article.category.name}
               </Link>
             </div>
