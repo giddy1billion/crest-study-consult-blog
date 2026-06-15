@@ -1,8 +1,8 @@
 # Crest Study Consult Blog
 
-**blog.creststudyconsult.com** — Editorial intelligence for Nigerian real estate.
+**blog.creststudyconsult.com** — International education intelligence.
 
-The trust-first content platform for Crest Study Consult (RC No. 9054052), delivering data-driven insights, verification guides, and market intelligence for renters, buyers, agents, and diaspora Nigerians navigating the Nigerian property market.
+The content platform for Crest Study Consult LTD, delivering verified, data-driven guidance on study destinations, admissions, student visas, and scholarships for students studying abroad.
 
 ## Tech Stack
 
@@ -20,8 +20,8 @@ The trust-first content platform for Crest Study Consult (RC No. 9054052), deliv
 
 - 📝 **Editorial CMS** — Full article management with status workflow (IDEA → DRAFT → REVIEW → LIVE)
 - 🔍 **SEO/AEO Optimized** — JSON-LD schemas, quick answer blocks, FAQ markup for search & AI engines
-- 📊 **Market Intelligence** — Research reports and city-level data analysis
-- 🌍 **Diaspora Focus** — Remote verification resources for Nigerians abroad
+- 📊 **Study Intelligence** — Destination reports and visa/tuition comparisons
+- 🌍 **Global Destinations** — Guidance for the UK, US, Canada, Australia, Germany, and Ireland
 - 🔐 **Admin Dashboard** — Modern glass-morphism UI with authentication
 - 📱 **Responsive** — Mobile-first design across all pages
 
@@ -29,11 +29,11 @@ The trust-first content platform for Crest Study Consult (RC No. 9054052), deliv
 
 | Slug | Name |
 |------|------|
-| `trust-verification` | Trust & Verification |
-| `market-intelligence` | Market Intelligence |
-| `renter-agent-guides` | Renter & Agent Guides |
-| `diaspora-housing` | Diaspora Housing |
-| `policy-infrastructure` | Policy & Infrastructure |
+| `study-destinations` | Study Destinations |
+| `admissions` | Admissions |
+| `visa-immigration` | Visa & Immigration |
+| `scholarships` | Scholarships |
+| `study-intelligence` | Study Intelligence |
 
 ## Getting Started
 
@@ -82,8 +82,8 @@ npm run db:reset      # Reset and re-seed database
 
 After seeding, log in at `/admin/login`:
 
-- **Email:** `admin@propx.africa`
-- **Password:** `PropXAdmin2025!`
+- **Email:** `admin@Crest Study Consult.africa`
+- **Password:** `Crest Study ConsultAdmin2025!`
 
 ⚠️ Change this password immediately in production.
 
@@ -140,8 +140,8 @@ build/
 ### Docker
 
 ```bash
-docker build -t propx-blog .
-docker run -p 3000:3000 propx-blog
+docker build -t Crest Study Consult-blog .
+docker run -p 3000:3000 Crest Study Consult-blog
 ```
 
 ### Supported Platforms
@@ -165,10 +165,10 @@ docker run -p 3000:3000 propx-blog
 
 ## Brand Guidelines
 
-- Always use **Crest Study Consult** (never "PropX" alone)
-- Legal entity: **Crest Study Consult (RC No. 9054052)**
+- Always use the full name **Crest Study Consult** (never "Crest" alone)
+- Legal entity: **Crest Study Consult LTD**
 - Primary color: teal `#069494`
-- Voice: Calm, precise, institutional, editorial
+- Voice: academic, advisory, structured, neutral (warm and inspirational on brand surfaces)
 
 ## License
 

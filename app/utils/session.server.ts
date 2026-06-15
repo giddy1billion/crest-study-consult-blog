@@ -18,7 +18,7 @@ if (!SESSION_SECRET) {
 // Session storage configuration
 const sessionStorage = createCookieSessionStorage({
   cookie: {
-    name: "__propx_admin_session",
+    name: "__Crest Study Consult_admin_session",
     httpOnly: true,
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: "/",

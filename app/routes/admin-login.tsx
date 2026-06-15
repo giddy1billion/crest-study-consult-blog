@@ -192,7 +192,7 @@ export default function AdminLogin() {
             Welcome to the<br />Editorial Dashboard
           </h1>
           <p className="text-teal-100 text-lg max-w-md">
-            Manage your content, track performance, and publish articles that build trust in Nigerian real estate.
+            Manage your content, track performance, and publish articles that guide students studying abroad.
           </p>
           
           {/* Feature highlights */}
@@ -391,8 +391,8 @@ export default function AdminLogin() {
           {/* Help text */}
           <p className="text-center text-sm text-gray-500">
             Need help? Contact{" "}
-            <a href="mailto:tech@propx.africa" className="font-medium text-teal-600 hover:text-teal-500">
-              tech@propx.africa
+            <a href="mailto:tech@Crest Study Consult.africa" className="font-medium text-teal-600 hover:text-teal-500">
+              tech@Crest Study Consult.africa
             </a>
           </p>
         </div>

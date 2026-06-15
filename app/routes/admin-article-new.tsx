@@ -614,7 +614,7 @@ export default function AdminArticleNew({ loaderData }: Route.ComponentProps) {
                   id="targetKeyword"
                   name="targetKeyword"
                   className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl transition-all duration-200 outline-none hover:border-gray-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                  placeholder="e.g., verify property Lagos, diaspora investment Nigeria"
+                  placeholder="e.g., study in the UK, Canada study permit requirements"
                 />
               </div>
               <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">

@@ -11,7 +11,7 @@ import { getCategoryArticles } from "~/utils/queries.server";
 export function meta({}: Route.MetaArgs) {
   const title = `Research Library${SEO_DEFAULTS.titleSuffix}`;
   const description =
-    "Data-driven real estate intelligence from PropX. Market reports, trend analysis, and verified data on African property markets from Crest Study Consult.";
+    "Data-driven study-abroad intelligence from Crest Study Consult. Destination reports, visa and tuition comparisons, and verified guidance for international students.";
   const url = `${BRAND.url}/market-intelligence`;
 
   return [
@@ -30,10 +30,10 @@ export function meta({}: Route.MetaArgs) {
 
 /**
  * Research Library Loader
- * Fetches all published articles in the market-intelligence category
+ * Fetches all published reports in the study-intelligence category
  */
 export async function loader({}: Route.LoaderArgs) {
-  const { articles } = await getCategoryArticles("market-intelligence", 1, 20);
+  const { articles } = await getCategoryArticles("study-intelligence", 1, 20);
 
   return data(
     { reports: articles },
@@ -74,8 +74,8 @@ export default function MarketIntelligenceIndex({ loaderData }: Route.ComponentP
                   Research Library
                 </h1>
                 <p className="mt-4 text-lg text-gray-600 leading-relaxed">
-                  Data-driven real estate research from Crest Study Consult. Market reports, trend
-                  analysis, and verified data on Nigerian property markets.
+                  Data-driven study-abroad research from Crest Study Consult. Destination reports,
+                  visa and tuition comparisons, and verified guidance for international students.
                 </p>
               </div>
             </div>

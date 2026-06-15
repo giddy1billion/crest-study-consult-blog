@@ -28,7 +28,7 @@ export function meta({ location }: Route.MetaArgs) {
 
   return [
     { title },
-    { name: "description", content: `Search ${BRAND.name} for articles, research, and guides on African real estate intelligence from PropX.` },
+    { name: "description", content: `Search ${BRAND.name} for articles, research, and guides on studying abroad — destinations, admissions, visas, and scholarships.` },
     { name: "robots", content: "noindex, follow" }, // Don't index search pages
     { property: "og:title", content: title },
     { property: "og:type", content: "website" },

@@ -16,7 +16,7 @@ import type { MediaFolder } from "@prisma/client";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const BUCKET_NAME = "propx-media";
+const BUCKET_NAME = "csc-media";
 
 // Validate environment variables
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
@@ -41,7 +41,7 @@ function getSupabaseClient(): SupabaseClient {
       },
       // Disable realtime - we only use storage
       global: {
-        headers: { "X-Client-Info": "propx-africa-blog/storage" },
+        headers: { "X-Client-Info": "crest-study-consult-blog/storage" },
       },
     });
   }

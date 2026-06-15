@@ -21,7 +21,7 @@ export function meta({ data }: Route.MetaArgs) {
   const { tag, articleCount } = data;
   const url = `${BRAND.url}/tag/${tag.slug}`;
   const title = `${tag.name}${SEO_DEFAULTS.titleSuffix}`;
-  const description = `${articleCount} article${articleCount !== 1 ? "s" : ""} tagged with "${tag.name}" on ${BRAND.name}. Research and insights about ${tag.name.toLowerCase()} in Nigerian real estate.`;
+  const description = `${articleCount} article${articleCount !== 1 ? "s" : ""} tagged with "${tag.name}" on ${BRAND.name}. Research and guidance about ${tag.name.toLowerCase()} for international students.`;
 
   return [
     { title },
@@ -34,7 +34,7 @@ export function meta({ data }: Route.MetaArgs) {
     { property: "og:url", content: url },
     { property: "og:type", content: "website" },
     { property: "og:site_name", content: BRAND.name },
-    { property: "og:locale", content: "en_NG" },
+    { property: "og:locale", content: "en" },
 
     // Twitter
     { name: "twitter:card", content: SEO_DEFAULTS.twitterCard },

@@ -39,7 +39,7 @@ const sampleNotifications = [
     id: "1",
     type: "article" as const,
     title: "Article published",
-    message: "How to verify a property in Lagos has been published successfully.",
+    message: "How to study in the UK has been published successfully.",
     time: "2 minutes ago",
     read: false,
     link: "/admin/articles",

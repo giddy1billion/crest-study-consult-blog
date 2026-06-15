@@ -38,14 +38,14 @@ export async function loader({}: Route.LoaderArgs) {
   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>${BRAND.name} Research</title>
-    <description>PropX — official real estate intelligence for Africa. Research, data, and guides on property verification, market trends, and fraud prevention.</description>
+    <description>Crest Study Consult — international education intelligence. Research and guides on study destinations, admissions, student visas, and scholarships.</description>
     <link>${baseUrl}</link>
     <atom:link href="${baseUrl}/feed.xml" rel="self" type="application/rss+xml"/>
-    <language>en-ng</language>
+    <language>en</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <ttl>60</ttl>
-    <managingEditor>research@propx.africa (${BRAND.name} Research Team)</managingEditor>
-    <webMaster>tech@propx.africa (${BRAND.name} Tech Team)</webMaster>
+    <managingEditor>research@Crest Study Consult.africa (${BRAND.name} Research Team)</managingEditor>
+    <webMaster>tech@Crest Study Consult.africa (${BRAND.name} Tech Team)</webMaster>
     <copyright>© ${new Date().getFullYear()} ${BRAND.legalName}. All rights reserved.</copyright>
     <image>
       <url>${BRAND.logo}</url>

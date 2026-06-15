@@ -19,8 +19,8 @@ const BASE_URL = process.env.NODE_ENV === "production"
 
 // Email configuration
 export const EMAIL_CONFIG = {
-  from: process.env.NEWSLETTER_FROM || "Crest Study Consult <noreply@creststudyconsult.com>",
-  replyTo: "hello@creststudyconsult.com",
+  from: process.env.NEWSLETTER_FROM || "Crest Study Consult <noreply@notifications.creststudyconsult.com>",
+  replyTo: process.env.NEWSLETTER_REPLY_TO || "hello@notifications.creststudyconsult.com",
   newsletterListId: process.env.RESEND_AUDIENCE_ID || "",
 } as const;
 

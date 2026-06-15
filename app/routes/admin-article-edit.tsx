@@ -771,7 +771,7 @@ export default function AdminArticleEdit({ loaderData }: Route.ComponentProps) {
                     </div>
                     <FormInput label="Meta title" name="_metaTitle" value={formData.metaTitle} onChange={(v) => updateField("metaTitle", v)} maxLength={100} showCounter hint="50-100 characters. Include 'Crest Study Consult' for brand consistency" />
                     <FormTextarea label="Meta description" name="_metaDescription" value={formData.metaDescription} onChange={(v) => updateField("metaDescription", v)} rows={3} maxLength={300} minLength={120} hint="150-300 characters. Compelling summary for search results" />
-                    <FormInput label="Target keyword" name="_targetKeyword" value={formData.targetKeyword} onChange={(v) => updateField("targetKeyword", v)} placeholder="e.g., property verification Lagos" hint="Primary keyword this article should rank for" />
+                    <FormInput label="Target keyword" name="_targetKeyword" value={formData.targetKeyword} onChange={(v) => updateField("targetKeyword", v)} placeholder="e.g., study in the UK" hint="Primary keyword this article should rank for" />
                     
                     {/* Hero Image Picker */}
                     <div>

@@ -11,7 +11,7 @@ import { db } from "~/utils/db.server";
 export function meta({}: Route.MetaArgs) {
   const title = `Research Library${SEO_DEFAULTS.titleSuffix}`;
   const description =
-    "Data-driven real estate intelligence from PropX. Market reports, trend analysis, city snapshots, and verified data on African property markets from Crest Study Consult.";
+    "Data-driven study-abroad intelligence from Crest Study Consult. Destination reports, visa and tuition comparisons, and verified guidance for international students.";
   const url = `${BRAND.url}/research`;
 
   return [
@@ -211,8 +211,8 @@ export default function ResearchLibrary({ loaderData }: Route.ComponentProps) {
                 </h1>
 
                 <p className="mt-6 text-xl text-gray-600 leading-relaxed">
-                  Data-driven real estate intelligence from Crest Study Consult. Access market reports, 
-                  city snapshots, trend analyses, and investment guides for Nigerian property markets.
+                  Data-driven study-abroad intelligence from Crest Study Consult. Access destination
+                  reports, visa and tuition comparisons, and verified guidance for international students.
                 </p>
 
                 {/* Quick Stats */}
@@ -223,7 +223,7 @@ export default function ResearchLibrary({ loaderData }: Route.ComponentProps) {
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
                     <span className="text-2xl font-bold text-teal-600">{cities.length}</span>
-                    <span>Cities covered</span>
+                    <span>Destinations covered</span>
                   </div>
                 </div>
               </div>
@@ -304,8 +304,8 @@ export default function ResearchLibrary({ loaderData }: Route.ComponentProps) {
               <div className="container-blog">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">City market data</h2>
-                    <p className="mt-2 text-gray-600">Explore real estate data for Nigerian cities</p>
+                    <h2 className="text-2xl font-bold text-gray-900">Destination data</h2>
+                    <p className="mt-2 text-gray-600">Explore study-abroad data by destination</p>
                   </div>
                 </div>
 

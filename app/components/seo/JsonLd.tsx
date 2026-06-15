@@ -19,7 +19,7 @@ export function JsonLd({ data }: JsonLdProps) {
 /**
  * Organization schema - include on every page
  * Includes logo for Google Search favicon display and alternate
- * names so search engines associate "PropX", "propX" and "propx"
+ * names so search engines associate "Crest Study Consult", "Crest Study Consult" and "Crest Study Consult"
  * with the Crest Study Consult entity.
  */
 export function OrganizationSchema() {

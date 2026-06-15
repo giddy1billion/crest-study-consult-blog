@@ -26,9 +26,9 @@ export function meta({ data }: Route.MetaArgs) {
 
   const { city } = data;
   const url = `${BRAND.url}/cities/${city.slug}`;
-  const title = city.metaTitle || `${city.name} Real Estate Market${SEO_DEFAULTS.titleSuffix}`;
+  const title = city.metaTitle || `${city.name}${SEO_DEFAULTS.titleSuffix}`;
   const description = city.metaDescription || city.description || 
-    `Real estate market data for ${city.name}, ${city.state}. Property prices, rental yields, and market trends from Crest Study Consult Research.`;
+    `Study-abroad data for ${city.name}, ${city.state}. Destination guidance and verified study intelligence from Crest Study Consult Research.`;
 
   return [
     { title },
@@ -176,11 +176,11 @@ export default function CityPage({ loaderData }: Route.ComponentProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {city.state}, Nigeria
+                  {city.state}
                 </span>
 
                 <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-                  {city.name} real estate market
+                  {city.name} study guide
                 </h1>
 
                 {city.description && (

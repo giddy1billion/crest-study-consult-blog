@@ -9,8 +9,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: "bg-navy-700 text-white hover:bg-navy-800 focus:ring-navy-500",
-  secondary: "bg-teal-500 text-white hover:bg-teal-600 focus:ring-teal-500",
+  primary: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500",
+  secondary: "bg-gold-500 text-white hover:bg-gold-600 focus:ring-gold-500",
   ghost: "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500",
   outline: "bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500",
 };

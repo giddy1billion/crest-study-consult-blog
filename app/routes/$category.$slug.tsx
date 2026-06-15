@@ -72,7 +72,7 @@ export function meta({ data, params }: Route.MetaArgs) {
     { property: "og:url", content: url },
     { property: "og:type", content: "article" },
     { property: "og:site_name", content: BRAND.name },
-    { property: "og:locale", content: "en_NG" },
+    { property: "og:locale", content: "en" },
     
     // Article metadata
     { property: "article:published_time", content: article.publishedAt },

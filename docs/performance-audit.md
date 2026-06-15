@@ -136,7 +136,7 @@
 - [ ] No `<picture>` element with format fallbacks
 - [ ] No explicit width/height on most images
 - [ ] No blur placeholder/LQIP implementation
-- [ ] No image CDN transformation for PropX-hosted images
+- [ ] No image CDN transformation for Crest Study Consult-hosted images
 
 ---
 

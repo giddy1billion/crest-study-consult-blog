@@ -34,7 +34,7 @@ export function meta({ data }: Route.MetaArgs) {
     { property: "og:url", content: url },
     { property: "og:type", content: "profile" },
     { property: "og:site_name", content: BRAND.name },
-    { property: "og:locale", content: "en_NG" },
+    { property: "og:locale", content: "en" },
 
     // Twitter
     { name: "twitter:card", content: SEO_DEFAULTS.twitterCard },

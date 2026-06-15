@@ -4,9 +4,9 @@
 /* ============================================
    Crest Study Consult Brand Color System
    White background. Always.
-   Navy (#0C2147) for authority and structure.
-   Teal (#17B7D8) for action and signal.
-   Everything else supports those three.
+   Green (#5CB031) for action and brand signal.
+   Slate charcoal (#3A464F) for authority and structure.
+   Gold (#E0A02A) for accents and highlights.
    ============================================ */
 
 @theme {
@@ -15,44 +15,90 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   /* ----------------------------------------
-     Navy — Primary brand accent + headlines
-     Anchor: navy-700 = #0C2147
-     USE: nav bar, footer, primary buttons,
-     headlines, featured badges, category pills,
-     stat callout backgrounds.
+     Slate charcoal — Structure + headlines
+     Anchor: navy-700 = #3A464F (charcoal)
+     USE: nav bar, footer, dark sections,
+     headlines, structural surfaces.
+     (Token name kept as `navy-*` for compat.)
      ---------------------------------------- */
-  --color-navy-50: #eef1f7;
-  --color-navy-100: #d3dbea;
-  --color-navy-200: #a7b6d6;
-  --color-navy-300: #7b91c1;
-  --color-navy-400: #4f6cad;
-  --color-navy-500: #324f8a;
-  --color-navy-600: #1e3563;
-  --color-navy-700: #0c2147;
-  --color-navy-800: #091a38;
-  --color-navy-900: #061129;
-  --color-navy-950: #030a1a;
+  --color-navy-50: #f4f6f7;
+  --color-navy-100: #e4e8eb;
+  --color-navy-200: #c9d1d6;
+  --color-navy-300: #a3afb8;
+  --color-navy-400: #74838d;
+  --color-navy-500: #55646e;
+  --color-navy-600: #44515a;
+  --color-navy-700: #3a464f;
+  --color-navy-800: #2e383f;
+  --color-navy-900: #1f262b;
+  --color-navy-950: #12171a;
+
+  /* Slate alias (explicit name) */
+  --color-slate-50: #f4f6f7;
+  --color-slate-100: #e4e8eb;
+  --color-slate-200: #c9d1d6;
+  --color-slate-300: #a3afb8;
+  --color-slate-400: #74838d;
+  --color-slate-500: #55646e;
+  --color-slate-600: #44515a;
+  --color-slate-700: #3a464f;
+  --color-slate-800: #2e383f;
+  --color-slate-900: #1f262b;
+  --color-slate-950: #12171a;
 
   /* ----------------------------------------
-     Teal — Signal accent + links
-     Anchor: teal-500 = #17B7D8 (signal),
-     teal-600 = #0EA5C9 (button hover),
-     teal-50  = #E0F7FC (wash / callout bg).
-     USE: links, hover states, progress bars,
-     interactive underlines, secondary buttons.
-     If it is clickable, it is teal.
+     Green — Primary action + links + signal
+     Anchor: green-500 = #5CB031 (brand),
+     green-600 = #4F9A2A (button / hover),
+     green-50  = #F0F8E9 (wash / callout bg).
+     USE: primary buttons, links, hover states,
+     progress bars, interactive underlines.
+     If it is an action, it is green.
+     (Token name kept as `teal-*` for compat.)
      ---------------------------------------- */
-  --color-teal-50: #e0f7fc;
-  --color-teal-100: #b8ecf7;
-  --color-teal-200: #8fe0f1;
-  --color-teal-300: #5fd2e8;
-  --color-teal-400: #30c2dd;
-  --color-teal-500: #17b7d8;
-  --color-teal-600: #0ea5c9;
-  --color-teal-700: #0c87a6;
-  --color-teal-800: #0e6e87;
-  --color-teal-900: #115a6e;
-  --color-teal-950: #0a3a48;
+  --color-teal-50: #f0f8e9;
+  --color-teal-100: #dcefc9;
+  --color-teal-200: #bfe29e;
+  --color-teal-300: #9fd472;
+  --color-teal-400: #7bc247;
+  --color-teal-500: #5cb031;
+  --color-teal-600: #4f9a2a;
+  --color-teal-700: #3f7c22;
+  --color-teal-800: #34631e;
+  --color-teal-900: #2c521c;
+  --color-teal-950: #14290b;
+
+  /* Green alias (explicit name) */
+  --color-green-50: #f0f8e9;
+  --color-green-100: #dcefc9;
+  --color-green-200: #bfe29e;
+  --color-green-300: #9fd472;
+  --color-green-400: #7bc247;
+  --color-green-500: #5cb031;
+  --color-green-600: #4f9a2a;
+  --color-green-700: #3f7c22;
+  --color-green-800: #34631e;
+  --color-green-900: #2c521c;
+  --color-green-950: #14290b;
+
+  /* ----------------------------------------
+     Gold — Accent + highlights + badges
+     Anchor: gold-500 = #E0A02A.
+     USE: badges, eyebrow pills, highlight
+     accents, secondary CTA outlines.
+     Use sparingly — accent, not foundation.
+     ---------------------------------------- */
+  --color-gold-50: #fdf6e7;
+  --color-gold-100: #fae9c2;
+  --color-gold-200: #f4d389;
+  --color-gold-300: #edbc52;
+  --color-gold-400: #e7ab36;
+  --color-gold-500: #e0a02a;
+  --color-gold-600: #c5851e;
+  --color-gold-700: #9e661a;
+  --color-gold-800: #80521b;
+  --color-gold-900: #6a4419;
+  --color-gold-950: #3d2509;
 
   /* ----------------------------------------
      Neutrals — Slate scale (supporting)
@@ -72,46 +118,50 @@
   --color-gray-600: #475569;
   --color-gray-700: #334155;
   --color-gray-800: #1e293b;
-  --color-gray-900: #0c2147;
+  --color-gray-900: #1f262b;
   --color-gray-950: #020617;
 
-  /* Brand alias (kept for backwards compatibility -> teal signal) */
-  --color-brand-50: #e0f7fc;
-  --color-brand-100: #b8ecf7;
-  --color-brand-200: #8fe0f1;
-  --color-brand-300: #5fd2e8;
-  --color-brand-400: #30c2dd;
-  --color-brand-500: #17b7d8;
-  --color-brand-600: #0ea5c9;
-  --color-brand-700: #0c87a6;
-  --color-brand-800: #0e6e87;
-  --color-brand-900: #115a6e;
-  --color-brand-950: #0a3a48;
+  /* Brand alias (kept for backwards compatibility -> green signal) */
+  --color-brand-50: #f0f8e9;
+  --color-brand-100: #dcefc9;
+  --color-brand-200: #bfe29e;
+  --color-brand-300: #9fd472;
+  --color-brand-400: #7bc247;
+  --color-brand-500: #5cb031;
+  --color-brand-600: #4f9a2a;
+  --color-brand-700: #3f7c22;
+  --color-brand-800: #34631e;
+  --color-brand-900: #2c521c;
+  --color-brand-950: #14290b;
 
   /* Semantic Colors */
-  --color-primary: var(--color-navy-700);
-  --color-primary-hover: var(--color-navy-800);
-  --color-primary-light: var(--color-navy-50);
+  --color-primary: var(--color-green-600);
+  --color-primary-hover: var(--color-green-700);
+  --color-primary-light: var(--color-green-50);
 
-  --color-signal: var(--color-teal-500);
-  --color-signal-hover: var(--color-teal-600);
-  --color-signal-wash: var(--color-teal-50);
+  --color-signal: var(--color-green-500);
+  --color-signal-hover: var(--color-green-600);
+  --color-signal-wash: var(--color-green-50);
+
+  --color-accent: var(--color-gold-500);
+  --color-accent-hover: var(--color-gold-600);
+  --color-accent-wash: var(--color-gold-50);
 
   /* Text Colors */
-  --color-text-primary: #0c2147;   /* headlines (navy) */
-  --color-text-secondary: #1e293b; /* body */
-  --color-text-meta: #64748b;      /* secondary / meta */
-  --color-text-muted: #94a3b8;     /* muted / caption */
+  --color-text-primary: #1f262b;   /* headlines (charcoal slate) */
+  --color-text-secondary: #2e383f; /* body */
+  --color-text-meta: #55646e;      /* secondary / meta */
+  --color-text-muted: #74838d;     /* muted / caption */
   --color-text-inverse: #ffffff;
 
   /* Background Colors */
   --color-bg-primary: #ffffff;     /* page */
-  --color-bg-secondary: #f8fafc;   /* card / surface */
-  --color-bg-tertiary: #f1f5f9;
+  --color-bg-secondary: #f4f6f7;   /* card / surface */
+  --color-bg-tertiary: #e4e8eb;
 
   /* Border Colors */
-  --color-border-light: #e2e8f0;   /* border / divider */
-  --color-border-medium: #cbd5e1;
+  --color-border-light: #c9d1d6;   /* border / divider */
+  --color-border-medium: #a3afb8;
 }
 
 html,
@@ -154,8 +204,8 @@ html {
   @apply underline decoration-teal-500/40 underline-offset-4 hover:decoration-teal-500 transition-colors;
 }
 
-/* In-body link: teal default, navy on hover (PropX color-swap signal) */
-.link-propx {
+/* In-body link: green default, charcoal on hover (Crest Study Consult color-swap signal) */
+.link-crest {
   @apply text-teal-600 hover:text-navy-700 transition-colors;
 }
 
@@ -174,16 +224,16 @@ html {
 }
 
 /* ============================================
-   PropX Special Content Elements
+   Crest Study Consult Special Content Elements
    ============================================ */
 
-/* Callout box ("PropX says…", key insight, tip) — teal wash */
-.callout-propx {
+/* Callout box ("Crest Study Consult says…", key insight, tip) — green wash */
+.callout-crest {
   @apply my-8 rounded-r-xl border-l-4 border-teal-500 bg-teal-50 p-6 text-navy-700;
 }
 
-/* Quote block — teal left border, surface bg, navy text */
-.quote-propx {
+/* Quote block — green left border, surface bg, charcoal text */
+.quote-crest {
   @apply my-8 rounded-r-lg border-l-4 border-teal-500 bg-gray-50 px-5 py-4 not-italic text-navy-700;
 }
 

@@ -79,10 +79,10 @@ export async function loader({ params }: Route.LoaderArgs) {
     <description>Recent comments on the article "${escapeXml(article.title)}" from ${BRAND.name} readers.</description>
     <link>${articleUrl}#comments</link>
     <atom:link href="${feedUrl}" rel="self" type="application/rss+xml"/>
-    <language>en-ng</language>
+    <language>en</language>
     <lastBuildDate>${comments.length > 0 ? new Date(comments[0].createdAt).toUTCString() : new Date().toUTCString()}</lastBuildDate>
     <ttl>30</ttl>
-    <managingEditor>research@propx.africa (${BRAND.name} Research Team)</managingEditor>
+    <managingEditor>research@Crest Study Consult.africa (${BRAND.name} Research Team)</managingEditor>
     <copyright>© ${new Date().getFullYear()} ${BRAND.legalName}. All rights reserved.</copyright>
     <image>
       <url>${BRAND.logo}</url>
