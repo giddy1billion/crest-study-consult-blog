@@ -68,11 +68,11 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (intent === "sync") {
     const result = await syncSubscribersFromResend();
-    return data({ 
-      success: result.success, 
-      message: result.success 
-        ? `Synced ${result.added} new subscribers, updated ${result.updated}` 
-        : result.error 
+    return data({
+      success: result.success,
+      message: result.success
+        ? `Synced ${result.added} new subscriber(s), updated ${result.updated}`
+        : result.error || "Sync failed for an unknown reason. Check the server logs for details.",
     });
   }
 

@@ -640,67 +640,131 @@ export async function syncSubscribersFromResend(): Promise<{
   error?: string;
 }> {
   try {
-    if (!EMAIL_CONFIG.newsletterListId) {
-      return { success: false, added: 0, updated: 0, error: "No audience ID configured" };
+    // Guard: API key must be configured
+    if (!process.env.RESEND_API_KEY) {
+      const error = "RESEND_API_KEY is not configured in the environment";
+      console.error("[syncSubscribersFromResend]", error);
+      return { success: false, added: 0, updated: 0, error };
     }
+
+    // Guard: audience ID must be configured
+    if (!EMAIL_CONFIG.newsletterListId) {
+      const error =
+        "RESEND_AUDIENCE_ID is not configured. Set it in your environment to enable syncing.";
+      console.error("[syncSubscribersFromResend]", error);
+      return { success: false, added: 0, updated: 0, error };
+    }
+
+    console.info(
+      `[syncSubscribersFromResend] Fetching contacts for audience ${EMAIL_CONFIG.newsletterListId}`
+    );
 
     // Fetch all contacts from Resend
     const response = await resend.contacts.list({
       audienceId: EMAIL_CONFIG.newsletterListId,
     });
 
-    if (!response.data) {
-      return { success: false, added: 0, updated: 0, error: "Failed to fetch contacts" };
+    // Surface the actual Resend API error if present
+    if (response.error) {
+      const { name, message } = response.error;
+      const detailedError = `Resend API error${name ? ` (${name})` : ""}: ${
+        message || "Unknown error returned by Resend"
+      }`;
+      console.error("[syncSubscribersFromResend] Resend returned an error:", response.error);
+      return { success: false, added: 0, updated: 0, error: detailedError };
     }
+
+    // The list endpoint returns { data: { object, data: Contact[] } }
+    const contacts = response.data?.data;
+
+    if (!Array.isArray(contacts)) {
+      const error =
+        "Unexpected response shape from Resend — no contact array was returned. " +
+        `Received: ${JSON.stringify(response.data)}`;
+      console.error("[syncSubscribersFromResend]", error);
+      return { success: false, added: 0, updated: 0, error };
+    }
+
+    console.info(
+      `[syncSubscribersFromResend] Retrieved ${contacts.length} contact(s) from Resend`
+    );
 
     let added = 0;
     let updated = 0;
+    const rowErrors: string[] = [];
 
-    for (const contact of response.data.data) {
-      const existing = await prisma.newsletterSubscriber.findUnique({
-        where: { email: contact.email.toLowerCase() },
-      });
+    for (const contact of contacts) {
+      if (!contact.email) {
+        rowErrors.push(`Skipped contact ${contact.id ?? "(no id)"}: missing email`);
+        continue;
+      }
 
-      const status: "ACTIVE" | "UNSUBSCRIBED" = contact.unsubscribed ? "UNSUBSCRIBED" : "ACTIVE";
+      try {
+        const existing = await prisma.newsletterSubscriber.findUnique({
+          where: { email: contact.email.toLowerCase() },
+        });
 
-      if (existing) {
-        // Update if status changed
-        if (existing.status !== status || existing.resendId !== contact.id) {
-          await prisma.newsletterSubscriber.update({
-            where: { id: existing.id },
+        const status: "ACTIVE" | "UNSUBSCRIBED" = contact.unsubscribed
+          ? "UNSUBSCRIBED"
+          : "ACTIVE";
+
+        if (existing) {
+          // Update if status changed
+          if (existing.status !== status || existing.resendId !== contact.id) {
+            await prisma.newsletterSubscriber.update({
+              where: { id: existing.id },
+              data: {
+                resendId: contact.id,
+                status,
+                firstName: contact.first_name || existing.firstName,
+                lastName: contact.last_name || existing.lastName,
+              },
+            });
+            updated++;
+          }
+        } else {
+          // Create new subscriber
+          await prisma.newsletterSubscriber.create({
             data: {
+              email: contact.email.toLowerCase(),
               resendId: contact.id,
+              firstName: contact.first_name || null,
+              lastName: contact.last_name || null,
               status,
-              firstName: contact.first_name || existing.firstName,
-              lastName: contact.last_name || existing.lastName,
+              source: "RESEND_SYNC",
             },
           });
-          updated++;
+          added++;
         }
-      } else {
-        // Create new subscriber
-        await prisma.newsletterSubscriber.create({
-          data: {
-            email: contact.email.toLowerCase(),
-            resendId: contact.id,
-            firstName: contact.first_name || null,
-            lastName: contact.last_name || null,
-            status,
-            source: "RESEND_SYNC",
-          },
-        });
-        added++;
+      } catch (rowError) {
+        const message = rowError instanceof Error ? rowError.message : String(rowError);
+        console.error(
+          `[syncSubscribersFromResend] Failed to upsert contact ${contact.email}:`,
+          rowError
+        );
+        rowErrors.push(`${contact.email}: ${message}`);
       }
     }
 
+    if (rowErrors.length > 0) {
+      const error = `Synced with ${rowErrors.length} error(s): ${rowErrors.join("; ")}`;
+      console.warn("[syncSubscribersFromResend]", error);
+      // Partial success — return what we managed plus the detail
+      return { success: false, added, updated, error };
+    }
+
+    console.info(
+      `[syncSubscribersFromResend] Done — added ${added}, updated ${updated}`
+    );
     return { success: true, added, updated };
   } catch (error) {
-    console.error("Sync subscribers error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[syncSubscribersFromResend] Unexpected failure:", error);
     return {
       success: false,
       added: 0,
       updated: 0,
-      error: error instanceof Error ? error.message : "Failed to sync subscribers",
+      error: `Failed to sync subscribers: ${message}`,
     };
   }
 }
