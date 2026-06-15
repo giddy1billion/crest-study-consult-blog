@@ -1,0 +1,65 @@
+{
+  "name": "propx-africa-blog",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "start": "react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc",
+    "generate-icons": "node scripts/generate-icons.mjs",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "test:api": "tsx scripts/test-super-api.ts",
+    "test:api:prod": "tsx scripts/test-super-api.ts https://blog.creststudyconsult.com",
+    "perf:audit": "node scripts/performance-audit.mjs",
+    "perf:audit:prod": "node scripts/performance-audit.mjs https://blog.creststudyconsult.com",
+    "perf:budget": "node scripts/bundle-budget.mjs",
+    "postbuild": "node scripts/bundle-budget.mjs"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^6.19.3",
+    "@react-router/node": "7.16.0",
+    "@react-router/serve": "7.16.0",
+    "@supabase/supabase-js": "^2.108.1",
+    "@tailwindcss/typography": "^0.5.20",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "isbot": "^5.1.36",
+    "marked": "^18.0.5",
+    "pg": "^8.21.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router": "7.16.0",
+    "resend": "^6.12.4",
+    "sharp": "^0.34.5",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@react-router/dev": "7.16.0",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/marked": "^5.0.2",
+    "@types/node": "^22",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "png-to-ico": "^3.0.1",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^4.2.2",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.3"
+  }
+}

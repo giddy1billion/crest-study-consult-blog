@@ -1,0 +1,671 @@
+// Crest Study Consult Blog Database Schema
+// Per PRD Section 11: Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// Post Model
+// The primary content model for articles and research reports
+// ============================================
+model Post {
+  id              String  @id @default(uuid())
+  slug            String  @unique // Lowercase, hyphens only, max 6 words
+  title           String // Sentence case, max 80 chars
+  metaTitle       String? // ≤60 chars, must contain "Crest Study Consult"
+  metaDescription String? // 150–160 chars
+  targetKeyword   String? // Primary keyword phrase for SEO/AEO
+  excerpt         String // 50–80 words, feeds quick answer block
+  content         String // Markdown body content
+
+  // Relations
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  subcategory String?
+  tags        Tag[]
+  author      Author    @relation(fields: [authorId], references: [id])
+  authorId    String
+  editor      String?
+  comments    Comment[] // User comments on this article
+
+  // Timestamps
+  publishedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Publishing state
+  isPublished     Boolean    @default(false)
+  isFeatured      Boolean    @default(false)
+  commentsEnabled Boolean    @default(false) // Admin toggle for comments
+  status          PostStatus @default(IDEA)
+
+  // Display metadata
+  readingTimeMin Int? // Auto-calculated from word count if not set
+  heroImage      String? // 1200×630px minimum
+  heroImageAlt   String? // Descriptive, contains primary keyword
+  canonicalURL   String? // Full URL with https://blog.creststudyconsult.com
+
+  // Schema & structured data
+  schemaType SchemaType @default(ARTICLE)
+  faqBlock   Json? // Array of {question, answer} objects (min 3)
+  ctaBlock   Json? // {headline, ctaText, ctaLink}
+
+  // Editorial
+  relatedSlugs  String[] // Manual override for related articles
+  sourceNotes   String? // All data sources cited
+  researchNotes String? // Internal notes — not published
+
+  // Analytics
+  viewCount  Int @default(0)
+  shareCount Int @default(0)
+
+  // Relations for analytics
+  views  ArticleView[]
+  shares ArticleShare[]
+
+  // Newsletter relation
+  newsletter Newsletter?
+
+  @@index([categoryId])
+  @@index([isPublished, publishedAt])
+  @@index([status])
+  @@index([isFeatured])
+}
+
+// ============================================
+// Category Model
+// Five fixed categories per PRD Section 6.2
+// ============================================
+model Category {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String? // 70–100 words for category hero
+  metaTitle   String?
+  metaDesc    String?
+  faqBlock    Json? // 4 questions specific to category intent
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+
+  @@index([slug])
+}
+
+// ============================================
+// Author Model
+// Default: Crest Study Consult Research Team
+// ============================================
+model Author {
+  id    String  @id @default(uuid())
+  slug  String  @unique
+  name  String
+  bio   String?
+  image String?
+  posts Post[]
+
+  @@index([slug])
+}
+
+// ============================================
+// Tag Model
+// For filtering within category pages
+// ============================================
+model Tag {
+  id    String @id @default(uuid())
+  slug  String @unique
+  name  String
+  posts Post[]
+
+  @@index([slug])
+}
+
+// ============================================
+// Newsletter Subscriber Model
+// Phase 4: Analytics & Growth
+// ============================================
+model Subscriber {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  source         String? // Which page/CTA they signed up from
+  subscribedAt   DateTime  @default(now())
+  confirmedAt    DateTime?
+  unsubscribedAt DateTime?
+  isActive       Boolean   @default(true)
+
+  @@index([isActive])
+  @@index([email])
+}
+
+// ============================================
+// Admin User Model
+// Phase 3: CMS & Editorial Workflow
+// ============================================
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(EDITOR)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isActive     Boolean  @default(true)
+
+  @@index([email])
+}
+
+// ============================================
+// Enums
+// ============================================
+
+// Workflow status machine per PRD Section 8.1
+enum PostStatus {
+  IDEA // Brief exists, keyword assigned
+  DRAFT // Article being written
+  EDITORIAL_REVIEW // Tone, accuracy, structure check
+  SEO_REVIEW // Title, meta, slug, keywords check
+  FACT_CHECK // Data and claims verification
+  AEO_REVIEW // Quick answer, FAQ, heading extractability
+  READY // All gates passed, awaiting publish
+  LIVE // isPublished: true
+  ARCHIVED // Removed from index
+  DELETE_REQUESTED // Editorial requested deletion, awaiting admin approval
+}
+
+// Schema types for structured data
+enum SchemaType {
+  ARTICLE
+  FAQ_PAGE
+  REPORT
+}
+
+// Admin user roles
+enum UserRole {
+  SUPER_ADMIN // Full platform access, external API only
+  ADMIN // User/author management
+  EDITOR // Article workflow management
+  WRITER // Content creation only
+  SEO_LEAD // SEO review
+  RESEARCHER // Research reports
+}
+
+// ============================================
+// Audit Log Model
+// Track all admin actions for security
+// ============================================
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String // CREATE_USER, DELETE_ARTICLE, UPDATE_AUTHOR, etc.
+  resource   String // users, articles, authors, etc.
+  resourceId String?
+  userId     String? // Admin user who performed action (null for API)
+  details    Json? // Before/after values, additional context
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([action])
+  @@index([resource])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================
+// Deletion Request Queue
+// Articles pending super admin approval
+// ============================================
+model DeletionRequest {
+  id           String         @id @default(uuid())
+  articleId    String
+  articleTitle String // Stored in case article is deleted
+  requestedBy  String // Admin user ID
+  reason       String
+  status       DeletionStatus @default(PENDING)
+  reviewedBy   String? // Super admin who reviewed
+  reviewedAt   DateTime?
+  reviewNotes  String?
+  createdAt    DateTime       @default(now())
+
+  @@index([status])
+  @@index([articleId])
+  @@index([createdAt])
+}
+
+enum DeletionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================
+// Comment Model
+// User comments on articles with threading support
+// ============================================
+model Comment {
+  id      String @id @default(uuid())
+  content String // Comment text, max 2000 chars
+
+  // Author info (guest comments - no login required)
+  authorName  String // Display name
+  authorEmail String // For notifications, not displayed
+  authorUrl   String? // Optional website
+
+  // Relations
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+
+  // Threading - replies to other comments
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId String?
+  replies  Comment[] @relation("CommentReplies")
+
+  // Moderation
+  status   CommentStatus @default(PENDING)
+  isEdited Boolean       @default(false)
+  editedAt DateTime?
+
+  // Metadata
+  ipAddress String? // For spam detection
+  userAgent String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId, status])
+  @@index([parentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Comment moderation status
+enum CommentStatus {
+  PENDING // Awaiting moderation
+  APPROVED // Visible to public
+  SPAM // Marked as spam
+  DELETED // Soft deleted
+}
+
+// ============================================
+// Research Report Model
+// Downloadable PDF reports with email gating
+// ============================================
+model ResearchReport {
+  id          String  @id @default(uuid())
+  slug        String  @unique
+  title       String
+  description String // Short description for cards
+  excerpt     String? // Longer excerpt for detail page
+
+  // File
+  fileUrl   String // URL to downloadable PDF
+  fileSize  Int? // File size in bytes
+  pageCount Int? // Number of pages
+
+  // Cover image
+  coverImage String?
+  coverAlt   String?
+
+  // Categorization
+  reportType ReportType @default(MARKET_REPORT)
+  city       City?      @relation(fields: [cityId], references: [id])
+  cityId     String?
+  tags       String[] // Simple string tags for filtering
+
+  // Gating
+  isGated   Boolean          @default(true) // Require email to download
+  downloads ReportDownload[]
+
+  // Publishing
+  publishedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isPublished Boolean  @default(false)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  @@index([reportType])
+  @@index([cityId])
+  @@index([isPublished, publishedAt])
+}
+
+enum ReportType {
+  MARKET_REPORT // Quarterly/annual market reports
+  CITY_SNAPSHOT // City-level data snapshots
+  TREND_ANALYSIS // Trend reports
+  POLICY_BRIEF // Policy analysis
+  INVESTMENT_GUIDE // Investment guides
+}
+
+// ============================================
+// Report Download Tracking
+// Tracks gated downloads with email capture
+// ============================================
+model ReportDownload {
+  id           String         @id @default(uuid())
+  report       ResearchReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId     String
+  email        String
+  name         String?
+  company      String?
+  ipAddress    String?
+  userAgent    String?
+  downloadedAt DateTime       @default(now())
+
+  @@index([reportId])
+  @@index([email])
+  @@index([downloadedAt])
+}
+
+// ============================================
+// City Model
+// Nigerian cities for market data pages
+// ============================================
+model City {
+  id    String @id @default(uuid())
+  slug  String @unique
+  name  String
+  state String // Nigerian state
+
+  // Market data (updated periodically)
+  avgPricePerSqm    Int? // Average price per sqm in Naira
+  avgRentalYield    Float? // Percentage
+  priceChangeYoY    Float? // Year-over-year percentage change
+  transactionVolume Int? // Number of transactions
+  lastUpdated       DateTime?
+
+  // Content
+  description   String?
+  heroImage     String?
+  marketSummary String? // Brief market overview
+  keyInsights   Json? // Array of insight strings
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  // Relations
+  reports ResearchReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([state])
+}
+
+// ============================================
+// Article View Tracking
+// Deduplicated view tracking with fingerprinting
+// ============================================
+model ArticleView {
+  id          String   @id @default(uuid())
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String
+  fingerprint String // Hash of IP + User Agent for deduplication
+  ipAddress   String?
+  userAgent   String?
+  referer     String? // Where the visitor came from
+  country     String? // Geo IP lookup (optional)
+  viewedAt    DateTime @default(now())
+
+  @@unique([postId, fingerprint, viewedAt]) // Prevent duplicate views within same request
+  @@index([postId])
+  @@index([fingerprint])
+  @@index([viewedAt])
+}
+
+// ============================================
+// Article Share Tracking
+// Track shares by platform
+// ============================================
+model ArticleShare {
+  id        String        @id @default(uuid())
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  platform  SharePlatform
+  ipAddress String?
+  userAgent String?
+  sharedAt  DateTime      @default(now())
+
+  @@index([postId])
+  @@index([platform])
+  @@index([sharedAt])
+}
+
+enum SharePlatform {
+  TWITTER
+  LINKEDIN
+  FACEBOOK
+  WHATSAPP
+  COPY_LINK
+  EMAIL
+}
+
+// ============================================
+// Media Library Model
+// Centralized storage for all uploaded images
+// ============================================
+model Media {
+  id          String    @id @default(uuid())
+  filename    String // Original filename
+  storagePath String    @unique // Path in Supabase storage
+  publicUrl   String // Public URL for serving
+  
+  // File metadata
+  mimeType    String // image/jpeg, image/png, image/webp
+  size        Int // File size in bytes
+  width       Int? // Image width in pixels
+  height      Int? // Image height in pixels
+  
+  // Organization
+  folder      MediaFolder @default(GENERAL)
+  alt         String? // Alt text for accessibility
+  caption     String? // Optional caption
+  tags        String[] // Array of tags for filtering
+  
+  // Usage tracking
+  usageCount  Int       @default(0) // Number of times used in articles
+  
+  // Audit
+  uploadedBy  String? // Admin user ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([folder])
+  @@index([mimeType])
+  @@index([createdAt])
+  @@index([tags])
+}
+
+enum MediaFolder {
+  HERO_IMAGES // Article hero images (1200x630)
+  CONTENT // Inline content images
+  AUTHORS // Author profile images
+  RESEARCH // Research report covers
+  GENERAL // Miscellaneous
+}
+
+// ============================================
+// Newsletter Subscriber Model
+// Synced from Resend Audience with local tracking
+// ============================================
+model NewsletterSubscriber {
+  id            String           @id @default(uuid())
+  email         String           @unique
+  firstName     String?
+  lastName      String?
+  resendId      String?          @unique // Resend contact ID for sync
+  status        SubscriberStatus @default(ACTIVE)
+  source        String?          // e.g., "homepage", "article-footer", "resend-import"
+  
+  // Timestamps
+  subscribedAt    DateTime  @default(now())
+  unsubscribedAt  DateTime?
+  lastSyncedAt    DateTime? // Last synced with Resend
+  
+  // Engagement
+  emailsSent      Int       @default(0)
+  emailsOpened    Int       @default(0)
+  emailsClicked   Int       @default(0)
+  
+  recipients    NewsletterRecipient[]
+
+  @@index([email])
+  @@index([status])
+  @@index([resendId])
+}
+
+enum SubscriberStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+  COMPLAINED
+}
+
+// ============================================
+// Newsletter Campaign Model
+// Tied to an article, supports scheduling
+// ============================================
+model Newsletter {
+  id          String   @id @default(uuid())
+  postId      String   @unique
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // Email content
+  subject     String
+  preheader   String?  // Preview text shown in inbox
+  customHtml  String?  // Optional custom HTML override
+  
+  // Scheduling
+  status        NewsletterStatus @default(DRAFT)
+  scheduledFor  DateTime?        // When to send (null = immediate)
+  sentAt        DateTime?        // When actually sent
+  sentBy        String?          // Admin user ID who triggered send
+  
+  // Aggregate stats (updated from recipient data)
+  totalSent       Int @default(0)
+  totalDelivered  Int @default(0)
+  totalBounced    Int @default(0)
+  totalOpened     Int @default(0)
+  totalClicked    Int @default(0)
+  uniqueOpens     Int @default(0)
+  uniqueClicks    Int @default(0)
+  unsubscribes    Int @default(0)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  recipients  NewsletterRecipient[]
+  testSends   NewsletterTestSend[]
+
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([sentAt])
+}
+
+enum NewsletterStatus {
+  DRAFT       // Not yet sent
+  SCHEDULED   // Scheduled for future send
+  SENDING     // Currently being sent
+  SENT        // Fully sent
+  CANCELLED   // Cancelled before completion
+  FAILED      // Failed to send
+}
+
+// ============================================
+// Newsletter Test Send Model
+// Track test emails sent before actual campaign
+// ============================================
+model NewsletterTestSend {
+  id           String     @id @default(uuid())
+  newsletterId String
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  
+  recipients   String[]   // Array of test email addresses
+  messageId    String?    // Resend email ID for status tracking
+  status       String     @default("sent") // sent, delivered, bounced, complained
+  sentBy       String?    // Admin user ID (optional)
+  sentAt       DateTime   @default(now())
+  
+  @@index([newsletterId])
+}
+
+// ============================================
+// Newsletter Recipient Model
+// Individual delivery tracking per subscriber
+// ============================================
+model NewsletterRecipient {
+  id           String     @id @default(uuid())
+  newsletterId String
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  subscriberId String
+  subscriber   NewsletterSubscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  
+  // Unique tracking ID for open/click pixels
+  trackingId   String     @unique @default(uuid())
+  
+  // Delivery tracking
+  sentAt       DateTime   @default(now())
+  delivered    Boolean    @default(false)
+  deliveredAt  DateTime?
+  bounced      Boolean    @default(false)
+  bouncedAt    DateTime?
+  bounceReason String?
+  
+  // Engagement tracking
+  opened       Boolean    @default(false)
+  openedAt     DateTime?  // First open
+  openCount    Int        @default(0)
+  lastOpenedAt DateTime?
+  
+  clicked      Boolean    @default(false)
+  clickedAt    DateTime?  // First click
+  clickCount   Int        @default(0)
+  lastClickedAt DateTime?
+  
+  // Unsubscribe via this email
+  unsubscribed   Boolean   @default(false)
+  unsubscribedAt DateTime?
+  
+  events       NewsletterEvent[]
+
+  @@unique([newsletterId, subscriberId])
+  @@index([trackingId])
+  @@index([newsletterId])
+  @@index([subscriberId])
+}
+
+// ============================================
+// Newsletter Event Model
+// Detailed event log for analytics
+// ============================================
+model NewsletterEvent {
+  id          String   @id @default(uuid())
+  recipientId String
+  recipient   NewsletterRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  
+  type        NewsletterEventType
+  url         String?  // For click events - which link was clicked
+  ipAddress   String?
+  userAgent   String?
+  country     String?  // Geo lookup
+  timestamp   DateTime @default(now())
+
+  @@index([recipientId, type])
+  @@index([timestamp])
+}
+
+enum NewsletterEventType {
+  OPEN
+  CLICK
+  UNSUBSCRIBE
+  BOUNCE
+  COMPLAINT
+}

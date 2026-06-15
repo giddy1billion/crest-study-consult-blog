@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/github-copilot-hooks.json",
+  "name": "Crest Study Consult Pre-Publish Validation",
+  "description": "Validates SEO fields and brand rules before publishing articles",
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "tools": ["replace_string_in_file", "create_file", "multi_replace_string_in_file"],
+      "steps": [
+        {
+          "type": "command",
+          "command": "node .github/hooks/scripts/validate-crest-content.js",
+          "windows": "node .github\\hooks\\scripts\\validate-crest-content.js",
+          "timeout": 10,
+          "description": "Validate Crest Study Consult brand rules and SEO requirements"
+        }
+      ]
+    }
+  ]
+}
