@@ -63,6 +63,9 @@ export default [
     route("admin/comments", "routes/admin-comments.tsx"),
     route("admin/newsletters", "routes/admin-newsletters.tsx"),
     route("admin/newsletter/:id", "routes/admin-newsletter.$id.tsx"),
+    route("admin/users", "routes/admin-users.tsx"),
+    route("admin/users/new", "routes/admin-user-new.tsx"),
+    route("admin/users/:id/edit", "routes/admin-user-edit.tsx"),
     route("admin/logout", "routes/admin-logout.tsx"),
     // Admin 404 catch-all (must be last in layout)
     route("admin/*", "routes/admin-not-found.tsx"),

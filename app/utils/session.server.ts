@@ -1,61 +1,63 @@
 /**
  * Crest Study Consult Session Management
- * 
- * Cookie-based session for admin authentication.
- * Uses React Router's built-in session handling.
+ *
+ * JWT-backed admin authentication. A signed HS256 JWT (see `jwt.server.ts`) is
+ * stored as the value of an httpOnly, secure cookie. Every authenticated
+ * request re-validates the token and reloads the user from the database so
+ * deactivations, role changes, and password resets take effect immediately.
  */
 
-import { createCookieSessionStorage, redirect } from "react-router";
+import { createCookie, redirect } from "react-router";
 import bcrypt from "bcryptjs";
 import { db } from "./db.server";
+import { signJwt, verifyJwt, signToken, verifyToken } from "./jwt.server";
+import { canManageAdmins } from "./constants";
 
-// Session secret from environment
+// ============================================
+// Configuration
+// ============================================
+
 const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET) {
-  throw new Error("SESSION_SECRET must be set in environment variables");
+if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
+  throw new Error(
+    "SESSION_SECRET must be set in environment variables and be at least 32 characters"
+  );
 }
 
-// Session storage configuration
-const sessionStorage = createCookieSessionStorage({
-  cookie: {
-    name: "__Crest Study Consult_admin_session",
-    httpOnly: true,
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: "/",
-    sameSite: "lax",
-    secrets: [SESSION_SECRET],
-    secure: process.env.NODE_ENV === "production",
-  },
+// Narrow to a definite string for the rest of the module.
+const JWT_SECRET: string = SESSION_SECRET;
+
+const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days (seconds)
+
+/**
+ * The session cookie holds the raw JWT. The token is already cryptographically
+ * signed, so the cookie itself does not need additional signing secrets.
+ */
+const sessionCookie = createCookie("__crest_admin_session", {
+  httpOnly: true,
+  maxAge: SESSION_MAX_AGE,
+  path: "/",
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
+});
+
+const OTP_CHALLENGE_MAX_AGE = 60 * 10; // 10 minutes (seconds)
+
+/**
+ * Short-lived cookie holding a signed challenge token. It identifies the user
+ * who passed password verification but still owes an emailed OTP. It carries no
+ * authority on its own — it only authorises OTP submission for that account.
+ */
+const otpChallengeCookie = createCookie("__crest_otp_challenge", {
+  httpOnly: true,
+  maxAge: OTP_CHALLENGE_MAX_AGE,
+  path: "/",
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
 });
 
 // ============================================
-// Session Helpers
-// ============================================
-
-/**
- * Get the current session from request
- */
-export async function getSession(request: Request) {
-  const cookie = request.headers.get("Cookie");
-  return sessionStorage.getSession(cookie);
-}
-
-/**
- * Commit session to response headers
- */
-export async function commitSession(session: Awaited<ReturnType<typeof getSession>>) {
-  return sessionStorage.commitSession(session);
-}
-
-/**
- * Destroy session (logout)
- */
-export async function destroySession(session: Awaited<ReturnType<typeof getSession>>) {
-  return sessionStorage.destroySession(session);
-}
-
-// ============================================
-// Authentication Functions
+// Types
 // ============================================
 
 export type AdminUser = {
@@ -65,67 +67,98 @@ export type AdminUser = {
   role: string;
 };
 
+// ============================================
+// Cookie helpers
+// ============================================
+
+async function getTokenFromRequest(request: Request): Promise<string | null> {
+  const cookieHeader = request.headers.get("Cookie");
+  const token = await sessionCookie.parse(cookieHeader);
+  return typeof token === "string" && token.length > 0 ? token : null;
+}
+
+// ============================================
+// Authentication Functions
+// ============================================
+
 /**
- * Get the logged-in admin user ID from session
+ * Get the logged-in admin user ID from a valid session token.
+ * Does not hit the database — only validates the JWT signature/expiry.
  */
 export async function getAdminUserId(request: Request): Promise<string | null> {
-  const session = await getSession(request);
-  const userId = session.get("adminUserId");
-  return typeof userId === "string" ? userId : null;
+  const token = await getTokenFromRequest(request);
+  if (!token) return null;
+
+  const claims = verifyJwt(token, JWT_SECRET);
+  return claims?.sub ?? null;
 }
 
 /**
- * Get the full admin user from session
- * First checks session cache, then falls back to database
+ * Get the full admin user for the current request.
+ *
+ * Validates the JWT, then reloads the user from the database to confirm the
+ * account is still active and the token has not been revoked (tokenVersion).
  */
 export async function getAdminUser(request: Request): Promise<AdminUser | null> {
-  const session = await getSession(request);
-  
-  // Check if user data is cached in session
-  const cachedUser = session.get("adminUserData") as AdminUser | undefined;
-  if (cachedUser && cachedUser.id) {
-    return cachedUser;
-  }
+  const token = await getTokenFromRequest(request);
+  if (!token) return null;
 
-  // Fall back to database lookup
-  const userId = session.get("adminUserId");
-  if (typeof userId !== "string") return null;
+  const claims = verifyJwt(token, JWT_SECRET);
+  if (!claims) return null;
 
   const user = await db.adminUser.findUnique({
-    where: { id: userId, isActive: true },
+    where: { id: claims.sub },
     select: {
       id: true,
       email: true,
       name: true,
       role: true,
+      isActive: true,
+      tokenVersion: true,
     },
   });
 
-  return user;
+  // Reject if the account is gone, deactivated, or the token was revoked.
+  if (!user || !user.isActive || user.tokenVersion !== claims.ver) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  };
 }
 
 /**
- * Require admin authentication
- * Redirects to login if not authenticated
+ * Require admin authentication.
+ * Redirects to login if not authenticated.
  */
 export async function requireAdmin(request: Request): Promise<AdminUser> {
   const user = await getAdminUser(request);
-  
+
   if (!user) {
     const url = new URL(request.url);
     const redirectTo = url.pathname + url.search;
-    throw redirect(`/admin/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+    throw redirect(`/admin/login?redirectTo=${encodeURIComponent(redirectTo)}`, {
+      // Clear any stale/invalid session cookie on the way out.
+      headers: { "Set-Cookie": await sessionCookie.serialize("", { maxAge: 0 }) },
+    });
   }
 
   return user;
 }
 
 /**
- * Require specific admin role
+ * Require one of the given roles. Throws 403 if the user lacks them.
  */
-export async function requireRole(request: Request, roles: string[]): Promise<AdminUser> {
+export async function requireRole(
+  request: Request,
+  roles: string[]
+): Promise<AdminUser> {
   const user = await requireAdmin(request);
-  
+
   if (!roles.includes(user.role)) {
     throw new Response("Forbidden", { status: 403 });
   }
@@ -134,71 +167,229 @@ export async function requireRole(request: Request, roles: string[]): Promise<Ad
 }
 
 /**
- * Verify login credentials
- * Returns user if valid, null if invalid
+ * Require systems-administrator privileges (admin/user management).
+ */
+export async function requireSystemsAdmin(request: Request): Promise<AdminUser> {
+  const user = await requireAdmin(request);
+
+  if (!canManageAdmins(user.role)) {
+    throw new Response("Forbidden — systems administrator access required", {
+      status: 403,
+    });
+  }
+
+  return user;
+}
+
+/**
+ * Fetch an active admin by id (used to complete OTP login).
+ * Returns null if the account is missing or deactivated.
+ */
+export async function getActiveAdminById(
+  userId: string
+): Promise<(AdminUser & { tokenVersion: number }) | null> {
+  const user = await db.adminUser.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      isActive: true,
+      tokenVersion: true,
+    },
+  });
+
+  if (!user || !user.isActive) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  };
+}
+
+/**
+ * Verify login credentials.
+ * Returns user (plus tokenVersion) if valid, null if invalid.
  */
 export async function verifyLogin(
   email: string,
   password: string
-): Promise<AdminUser | null> {
+): Promise<(AdminUser & { tokenVersion: number }) | null> {
   const user = await db.adminUser.findUnique({
-    where: { email, isActive: true },
+    where: { email },
     select: {
       id: true,
       email: true,
       name: true,
       role: true,
       passwordHash: true,
+      isActive: true,
+      tokenVersion: true,
     },
   });
 
-  if (!user) return null;
+  // Always run a comparison to reduce user-enumeration timing differences.
+  const hashToCompare =
+    user?.passwordHash ?? "$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinv";
+  const isValid = await bcrypt.compare(password, hashToCompare);
 
-  const isValid = await bcrypt.compare(password, user.passwordHash);
-  if (!isValid) return null;
+  if (!user || !user.isActive || !isValid) return null;
 
-  // Don't return the password hash
-  const { passwordHash: _, ...userWithoutPassword } = user;
-  return userWithoutPassword;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  };
 }
 
 /**
- * Create a new admin session after login
- * Caches user data in session to avoid DB lookups on subsequent requests
+ * Create a new admin session after login.
+ * Signs a JWT with the user's claims and stores it in the session cookie.
  */
 export async function createAdminSession({
-  request,
   userId,
   userData,
+  tokenVersion,
   redirectTo,
 }: {
-  request: Request;
+  request?: Request;
   userId: string;
   userData: AdminUser;
+  tokenVersion: number;
   redirectTo: string;
 }) {
-  const session = await getSession(request);
-  session.set("adminUserId", userId);
-  session.set("adminUserData", userData); // Cache user data in session
-  
+  const token = signJwt(
+    {
+      sub: userId,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      ver: tokenVersion,
+    },
+    JWT_SECRET,
+    SESSION_MAX_AGE
+  );
+
+  // Record the successful login (best-effort, non-blocking on failure).
+  await db.adminUser
+    .update({ where: { id: userId }, data: { lastLoginAt: new Date() } })
+    .catch(() => {});
+
   return redirect(redirectTo, {
     headers: {
-      "Set-Cookie": await commitSession(session),
+      "Set-Cookie": await sessionCookie.serialize(token),
     },
   });
 }
 
 /**
- * Logout and destroy session
+ * Logout and destroy the session cookie.
  */
-export async function logout(request: Request) {
-  const session = await getSession(request);
-  
+export async function logout(_request: Request) {
   return redirect("/admin/login", {
     headers: {
-      "Set-Cookie": await destroySession(session),
+      "Set-Cookie": await sessionCookie.serialize("", { maxAge: 0 }),
     },
   });
+}
+
+// ============================================
+// OTP login challenge (two-factor)
+// ============================================
+
+export type OtpChallenge = {
+  sub: string; // user id
+  ver: number; // tokenVersion captured at password verification
+  redirectTo: string;
+};
+
+/**
+ * Build a Set-Cookie header value carrying a signed OTP challenge token.
+ */
+export async function serializeOtpChallenge(challenge: OtpChallenge): Promise<string> {
+  const token = signToken(
+    { sub: challenge.sub, ver: challenge.ver, redirectTo: challenge.redirectTo, purpose: "otp" },
+    JWT_SECRET,
+    OTP_CHALLENGE_MAX_AGE
+  );
+  return otpChallengeCookie.serialize(token);
+}
+
+/**
+ * Read and validate the OTP challenge from the request, or null if absent/invalid.
+ */
+export async function getOtpChallenge(request: Request): Promise<OtpChallenge | null> {
+  const cookieHeader = request.headers.get("Cookie");
+  const token = await otpChallengeCookie.parse(cookieHeader);
+  if (typeof token !== "string" || token.length === 0) return null;
+
+  const payload = verifyToken<{
+    sub: string;
+    ver: number;
+    redirectTo: string;
+    purpose: string;
+  }>(token, JWT_SECRET);
+
+  if (!payload || payload.purpose !== "otp" || typeof payload.sub !== "string") {
+    return null;
+  }
+
+  return {
+    sub: payload.sub,
+    ver: typeof payload.ver === "number" ? payload.ver : 0,
+    redirectTo: typeof payload.redirectTo === "string" ? payload.redirectTo : "/admin",
+  };
+}
+
+/**
+ * Set-Cookie header value that clears the OTP challenge cookie.
+ */
+export async function clearOtpChallenge(): Promise<string> {
+  return otpChallengeCookie.serialize("", { maxAge: 0 });
+}
+
+/**
+ * Complete login after OTP verification: sign a session JWT and clear the
+ * challenge cookie in the same response.
+ */
+export async function completeOtpLogin({
+  userId,
+  userData,
+  tokenVersion,
+  redirectTo,
+}: {
+  userId: string;
+  userData: AdminUser;
+  tokenVersion: number;
+  redirectTo: string;
+}) {
+  const token = signJwt(
+    {
+      sub: userId,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      ver: tokenVersion,
+    },
+    JWT_SECRET,
+    SESSION_MAX_AGE
+  );
+
+  await db.adminUser
+    .update({ where: { id: userId }, data: { lastLoginAt: new Date() } })
+    .catch(() => {});
+
+  const headers = new Headers();
+  headers.append("Set-Cookie", await sessionCookie.serialize(token));
+  headers.append("Set-Cookie", await clearOtpChallenge());
+
+  return redirect(redirectTo, { headers });
 }
 
 // ============================================

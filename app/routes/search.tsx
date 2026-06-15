@@ -203,7 +203,7 @@ export default function SearchPage({ loaderData }: Route.ComponentProps) {
                 <button
                   type="submit"
                   disabled={isSearching}
-                  className="px-6 py-3 bg-navy-700 text-white font-medium rounded-xl hover:bg-navy-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-3 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isSearching ? (
                     <>
@@ -228,7 +228,7 @@ export default function SearchPage({ loaderData }: Route.ComponentProps) {
                 className={cn(
                   "flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors",
                   !category
-                    ? "bg-navy-700 text-white"
+                    ? "bg-green-600 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 )}
               >
@@ -242,7 +242,7 @@ export default function SearchPage({ loaderData }: Route.ComponentProps) {
                   className={cn(
                     "flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors whitespace-nowrap",
                     category === cat.slug
-                      ? "bg-navy-700 text-white"
+                      ? "bg-green-600 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   )}
                 >

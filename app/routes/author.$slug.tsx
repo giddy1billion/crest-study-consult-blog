@@ -119,10 +119,12 @@ export default function AuthorPage({ loaderData }: Route.ComponentProps) {
                       className="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white shadow-lg"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full mx-auto bg-teal-100 flex items-center justify-center border-4 border-white shadow-lg">
-                      <span className="text-3xl font-bold text-teal-700">
-                        {author.name.charAt(0)}
-                      </span>
+                    <div className="w-24 h-24 rounded-full mx-auto bg-teal-100 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
+                      <img
+                        src={BRAND.logo}
+                        alt={author.name}
+                        className="w-14 h-14 object-contain"
+                      />
                     </div>
                   )}
                 </div>

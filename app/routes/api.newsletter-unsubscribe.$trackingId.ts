@@ -68,7 +68,7 @@ function getUnsubscribePage(success: boolean, error?: string): string {
       margin: 0 auto 24px;
       font-size: 32px;
     }
-    .icon.success { background: #E0F7FC; }
+    .icon.success { background: #f0f8e9; }
     .icon.error { background: #fef2f2; }
     h1 {
       font-size: 24px;
@@ -85,14 +85,14 @@ function getUnsubscribePage(success: boolean, error?: string): string {
     a {
       display: inline-block;
       padding: 14px 28px;
-      background-color: #0C2147;
+      background-color: #4f9a2a;
       color: white;
       text-decoration: none;
       font-weight: 600;
       border-radius: 12px;
       transition: background-color 0.2s;
     }
-    a:hover { background-color: #091A38; }
+    a:hover { background-color: #3f7c22; }
     .footer {
       margin-top: 32px;
       font-size: 14px;

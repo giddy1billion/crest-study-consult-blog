@@ -153,6 +153,103 @@ export async function sendEmail({
 }
 
 /**
+ * Send an admin login OTP (two-factor) email.
+ *
+ * Used during admin sign-in for every account except the systems administrator.
+ */
+export async function sendAdminOtpEmail({
+  to,
+  name,
+  code,
+  expiresMinutes,
+}: {
+  to: string;
+  name: string;
+  code: string;
+  expiresMinutes: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const spacedCode = code.split("").join(" ");
+  return sendEmail({
+    to,
+    subject: `Your Crest Study Consult admin login code: ${code}`,
+    html: getAdminOtpEmailHtml({ name, code, expiresMinutes }),
+    text:
+      `Hi ${name},\n\n` +
+      `Your Crest Study Consult admin login code is ${spacedCode}.\n` +
+      `It expires in ${expiresMinutes} minutes and can be used once.\n\n` +
+      `If you did not try to sign in, change your password immediately and notify the systems administrator.`,
+  });
+}
+
+/**
+ * Admin OTP email HTML template
+ */
+function getAdminOtpEmailHtml({
+  name,
+  code,
+  expiresMinutes,
+}: {
+  name: string;
+  code: string;
+  expiresMinutes: number;
+}): string {
+  const spacedCode = code.split("").join("&nbsp;&nbsp;");
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your admin login code</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #3a464f 0%, #2e383f 100%); padding: 32px 40px;">
+              <img src="https://blog.creststudyconsult.com/logo.png" alt="Crest Study Consult" width="120" style="display: block;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <h1 style="margin: 0 0 16px; font-size: 22px; font-weight: 700; color: #111827;">
+                Confirm your sign-in
+              </h1>
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #4b5563;">
+                Hi ${name}, use this one-time code to finish signing in to the Crest Study Consult editorial dashboard.
+              </p>
+              <div style="margin: 0 0 24px; padding: 24px; text-align: center; background-color: #f3f4f6; border-radius: 12px;">
+                <span style="font-size: 34px; font-weight: 700; letter-spacing: 6px; color: #111827;">
+                  ${spacedCode}
+                </span>
+              </div>
+              <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: #6b7280;">
+                This code expires in ${expiresMinutes} minutes and can only be used once.
+              </p>
+              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #6b7280;">
+                If you did not try to sign in, change your password immediately and notify the systems administrator.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                Crest Study Consult LTD · This is an automated security message. Please do not reply.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+/**
  * Welcome email HTML template
  */
 function getWelcomeEmailHtml(firstName?: string): string {
@@ -173,7 +270,7 @@ function getWelcomeEmailHtml(firstName?: string): string {
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0C2147 0%, #122446 100%); padding: 40px 40px 30px;">
+            <td style="background: linear-gradient(135deg, #3a464f 0%, #2e383f 100%); padding: 40px 40px 30px;">
               <img src="https://blog.creststudyconsult.com/logo.png" alt="Crest Study Consult" width="120" style="display: block;">
             </td>
           </tr>
@@ -196,7 +293,7 @@ function getWelcomeEmailHtml(firstName?: string): string {
                 <li><strong>Visa & immigration</strong> — Student visa documentation and process updates</li>
                 <li><strong>Scholarships & funding</strong> — Grants, bursaries, and funding opportunities</li>
               </ul>
-              <a href="https://blog.creststudyconsult.com" style="display: inline-block; padding: 14px 28px; background-color: #0C2147; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
+              <a href="https://blog.creststudyconsult.com" style="display: inline-block; padding: 14px 28px; background-color: #4f9a2a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
                 Explore the blog →
               </a>
             </td>
@@ -210,7 +307,7 @@ function getWelcomeEmailHtml(firstName?: string): string {
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
                 You're receiving this because you subscribed at blog.creststudyconsult.com.
-                <a href="https://blog.creststudyconsult.com/unsubscribe" style="color: #0EA5C9;">Unsubscribe</a>
+                <a href="https://blog.creststudyconsult.com/unsubscribe" style="color: #4f9a2a;">Unsubscribe</a>
               </p>
             </td>
           </tr>
@@ -262,7 +359,7 @@ export function getNewArticleEmailHtml({
           <!-- Content -->
           <tr>
             <td style="padding: 40px;">
-              <p style="margin: 0 0 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #0EA5C9;">
+              <p style="margin: 0 0 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #4f9a2a;">
                 ${category} · ${readingTime} min read
               </p>
               <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: 700; color: #111827; line-height: 1.3;">
@@ -271,7 +368,7 @@ export function getNewArticleEmailHtml({
               <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #4b5563;">
                 ${excerpt}
               </p>
-              <a href="${url}" style="display: inline-block; padding: 14px 28px; background-color: #0C2147; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
+              <a href="${url}" style="display: inline-block; padding: 14px 28px; background-color: #4f9a2a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
                 Read article →
               </a>
             </td>
@@ -284,8 +381,8 @@ export function getNewArticleEmailHtml({
                 Crest Study Consult LTD
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                <a href="https://blog.creststudyconsult.com/unsubscribe" style="color: #0EA5C9;">Unsubscribe</a> · 
-                <a href="https://blog.creststudyconsult.com" style="color: #0EA5C9;">View in browser</a>
+                <a href="https://blog.creststudyconsult.com/unsubscribe" style="color: #4f9a2a;">Unsubscribe</a> · 
+                <a href="https://blog.creststudyconsult.com" style="color: #4f9a2a;">View in browser</a>
               </p>
             </td>
           </tr>
@@ -362,7 +459,7 @@ function getCommentApprovalEmailHtml({
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0C2147 0%, #122446 100%); padding: 30px 40px;">
+            <td style="background: linear-gradient(135deg, #3a464f 0%, #2e383f 100%); padding: 30px 40px;">
               <img src="https://blog.creststudyconsult.com/logo.png" alt="Crest Study Consult" width="100" style="display: block;">
             </td>
           </tr>
@@ -378,14 +475,14 @@ function getCommentApprovalEmailHtml({
               </p>
               
               <!-- Comment preview -->
-              <div style="margin: 30px 0; padding: 20px; background-color: #f3f4f6; border-left: 4px solid #17B7D8; border-radius: 0 12px 12px 0;">
+              <div style="margin: 30px 0; padding: 20px; background-color: #f3f4f6; border-left: 4px solid #5cb031; border-radius: 0 12px 12px 0;">
                 <p style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #374151;">Your comment:</p>
                 <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #4b5563; font-style: italic;">
                   "${truncatedComment}"
                 </p>
               </div>
               
-              <a href="${articleUrl}#comments" style="display: inline-block; padding: 14px 28px; background-color: #0C2147; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
+              <a href="${articleUrl}#comments" style="display: inline-block; padding: 14px 28px; background-color: #4f9a2a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
                 View your comment →
               </a>
             </td>
@@ -479,7 +576,7 @@ function getCommentReplyEmailHtml({
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0C2147 0%, #122446 100%); padding: 30px 40px;">
+            <td style="background: linear-gradient(135deg, #3a464f 0%, #2e383f 100%); padding: 30px 40px;">
               <img src="https://blog.creststudyconsult.com/logo.png" alt="Crest Study Consult" width="100" style="display: block;">
             </td>
           </tr>
@@ -495,14 +592,14 @@ function getCommentReplyEmailHtml({
               </p>
               
               <!-- Reply preview -->
-              <div style="margin: 30px 0; padding: 20px; background-color: #E0F7FC; border-left: 4px solid #17B7D8; border-radius: 0 12px 12px 0;">
-                <p style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #0C2147;">${replierName} wrote:</p>
+              <div style="margin: 30px 0; padding: 20px; background-color: #f0f8e9; border-left: 4px solid #5cb031; border-radius: 0 12px 12px 0;">
+                <p style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #3a464f;">${replierName} wrote:</p>
                 <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #1E293B;">
                   "${truncatedReply}"
                 </p>
               </div>
               
-              <a href="${articleUrl}#comments" style="display: inline-block; padding: 14px 28px; background-color: #0C2147; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
+              <a href="${articleUrl}#comments" style="display: inline-block; padding: 14px 28px; background-color: #4f9a2a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
                 View the conversation →
               </a>
             </td>
@@ -1182,7 +1279,7 @@ export function getNewsletterHtml({
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0C2147 0%, #122446 100%); padding: 30px 40px;">
+            <td style="background: linear-gradient(135deg, #3a464f 0%, #2e383f 100%); padding: 30px 40px;">
               <img src="https://blog.creststudyconsult.com/logo.png" alt="Crest Study Consult" width="120" style="display: block;">
             </td>
           </tr>
@@ -1193,7 +1290,7 @@ export function getNewsletterHtml({
               <p style="margin: 0 0 20px; font-size: 16px; color: #4b5563;">
                 ${greeting}
               </p>
-              <p style="margin: 0 0 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #0EA5C9;">
+              <p style="margin: 0 0 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #4f9a2a;">
                 ${post.category.name} · ${post.readingTimeMin || 5} min read
               </p>
               <h1 style="margin: 0 0 20px; font-size: 26px; font-weight: 700; color: #111827; line-height: 1.3;">
@@ -1208,7 +1305,7 @@ export function getNewsletterHtml({
                 ${post.metaDescription || post.excerpt || ""}
               </p>
               
-              <a href="${trackedArticleUrl}" style="display: inline-block; padding: 16px 32px; background-color: #0C2147; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
+              <a href="${trackedArticleUrl}" style="display: inline-block; padding: 16px 32px; background-color: #4f9a2a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
                 Read the full article →
               </a>
             </td>
@@ -1222,8 +1319,8 @@ export function getNewsletterHtml({
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
                 You're receiving this because you subscribed at blog.creststudyconsult.com.<br>
-                <a href="${unsubscribeUrl}" style="color: #0EA5C9;">Unsubscribe</a> · 
-                <a href="${BASE_URL}" style="color: #0EA5C9;">View in browser</a>
+                <a href="${unsubscribeUrl}" style="color: #4f9a2a;">Unsubscribe</a> · 
+                <a href="${BASE_URL}" style="color: #4f9a2a;">View in browser</a>
               </p>
               ${trackingPixel}
             </td>

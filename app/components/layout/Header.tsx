@@ -100,7 +100,7 @@ export function Header({ className }: HeaderProps) {
               href={BRAND.productUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-navy-700 hover:bg-navy-800 rounded-lg transition-colors"
+              className="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
             >
               Book a consultation
             </a>

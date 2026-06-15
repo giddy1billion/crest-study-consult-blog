@@ -66,9 +66,12 @@ Mobile-first. Breakpoints: `sm` 640, `md` 768, `lg` 1024, `xl` 1280.
 
 ## Brand Integration
 
-- Primary color: teal (`teal-600`)
-- Headings: `font-bold text-gray-900`; body: `text-gray-700`; captions: `text-sm text-gray-500`
+- Primary action color: green (`green-600` / `#5CB031`) — buttons, links, signals
+- Structure & headings: charcoal slate (`gray-900` / `#3A464F`)
+- Accent: gold (`gold-500` / `#E0A02A`) — badges and highlights, used sparingly
+- Body: `text-gray-700`; captions: `text-sm text-gray-500`
 - Monospace (`font-mono`) for slugs, URLs, and code
+- Note: legacy `teal-*` classes are mapped to green and `navy-*` classes to charcoal in `app.css`
 
 ## Prohibited
 

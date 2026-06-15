@@ -235,7 +235,7 @@ export async function generateOgImage(
   const base = sharp(source, { animated: false })
     .rotate()
     .resize(OG_WIDTH, OG_HEIGHT, { fit: "cover", position: "attention" })
-    .flatten({ background: "#0C2147" });
+    .flatten({ background: "#ffffff" });
 
   let last: Buffer | null = null;
 

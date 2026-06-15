@@ -155,7 +155,32 @@ model AdminUser {
   updatedAt    DateTime @updatedAt
   isActive     Boolean  @default(true)
 
+  // Session security
+  tokenVersion Int       @default(0) // Incremented to revoke all active JWT sessions
+  lastLoginAt  DateTime? // Last successful login timestamp
+
+  otps AdminOtp[]
+
   @@index([email])
+}
+
+// ============================================
+// Admin Login OTP Model
+// One-time codes emailed during login (two-factor).
+// Exempt: the systems administrator (ADMIN_EMAIL).
+// ============================================
+model AdminOtp {
+  id         String    @id @default(uuid())
+  user       AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  codeHash   String // bcrypt hash of the 6-digit code — never stored in plaintext
+  expiresAt  DateTime // Short-lived (10 minutes)
+  attempts   Int       @default(0) // Failed verification attempts
+  consumedAt DateTime? // Set once the code is successfully used
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // ============================================
@@ -185,12 +210,15 @@ enum SchemaType {
 
 // Admin user roles
 enum UserRole {
-  SUPER_ADMIN // Full platform access, external API only
+  SYSTEMS_ADMIN // Full in-app control: manage all admins + the entire blog
+  SUPER_ADMIN // Full platform access via external API
   ADMIN // User/author management
   EDITOR // Article workflow management
   WRITER // Content creation only
   SEO_LEAD // SEO review
   RESEARCHER // Research reports
+  CONSULTANT // Education consultancy team member
+  OPERATIONS // Operations / support team member
 }
 
 // ============================================

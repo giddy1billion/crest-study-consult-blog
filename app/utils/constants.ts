@@ -172,3 +172,101 @@ export function isValidSlug(slug: string): boolean {
   const hasDate = /\d{4}/.test(slug);
   return slugRegex.test(slug) && !hasDate;
 }
+
+/**
+ * Admin Roles
+ *
+ * SYSTEMS_ADMIN is the highest in-app role. It can manage every other admin
+ * account and the entire blog. The canonical systems administrator is
+ * `admin@creststudyconsult.com` (seeded as SYSTEMS_ADMIN).
+ */
+export const SYSTEMS_ADMIN_EMAIL = "admin@creststudyconsult.com";
+
+export type AdminRole =
+  | "SYSTEMS_ADMIN"
+  | "SUPER_ADMIN"
+  | "ADMIN"
+  | "EDITOR"
+  | "WRITER"
+  | "SEO_LEAD"
+  | "RESEARCHER"
+  | "CONSULTANT"
+  | "OPERATIONS";
+
+export interface AdminRoleMeta {
+  value: AdminRole;
+  label: string;
+  description: string;
+  /** Whether SYSTEMS_ADMIN may assign this role when creating/editing users */
+  assignable: boolean;
+}
+
+export const ADMIN_ROLES: readonly AdminRoleMeta[] = [
+  {
+    value: "SYSTEMS_ADMIN",
+    label: "Systems Admin",
+    description: "Full control: manage all admins and the entire blog.",
+    assignable: true,
+  },
+  {
+    value: "ADMIN",
+    label: "Admin",
+    description: "Manage content, authors, and day-to-day operations.",
+    assignable: true,
+  },
+  {
+    value: "EDITOR",
+    label: "Editorial",
+    description: "Manage the article workflow and publishing.",
+    assignable: true,
+  },
+  {
+    value: "WRITER",
+    label: "Writer",
+    description: "Create and draft article content.",
+    assignable: true,
+  },
+  {
+    value: "SEO_LEAD",
+    label: "SEO Lead",
+    description: "Review titles, meta, slugs, and keywords.",
+    assignable: true,
+  },
+  {
+    value: "RESEARCHER",
+    label: "Researcher",
+    description: "Produce research reports and study intelligence.",
+    assignable: true,
+  },
+  {
+    value: "CONSULTANT",
+    label: "Consultant",
+    description: "Education consultancy team member.",
+    assignable: true,
+  },
+  {
+    value: "OPERATIONS",
+    label: "Operations",
+    description: "Operations and support team member.",
+    assignable: true,
+  },
+  {
+    value: "SUPER_ADMIN",
+    label: "Super Admin (API)",
+    description: "Reserved for external API access only.",
+    assignable: false,
+  },
+] as const;
+
+/** Roles a SYSTEMS_ADMIN is allowed to assign through the dashboard. */
+export const ASSIGNABLE_ROLES = ADMIN_ROLES.filter((r) => r.assignable);
+
+/** Human-readable label for a role value. */
+export function roleLabel(role: string): string {
+  return ADMIN_ROLES.find((r) => r.value === role)?.label ?? role;
+}
+
+/** Whether a role grants admin-user management (systems administration). */
+export function canManageAdmins(role: string): boolean {
+  return role === "SYSTEMS_ADMIN";
+}

@@ -168,6 +168,13 @@ async function main() {
 <p>Costs depend on the course, level, and city. Budget for tuition, living expenses, the visa fee, and the Immigration Health Surcharge. Confirm current figures with each university and the UK government, as these change regularly.</p>`,
         categoryId: destinationsCategory.id,
         authorId: author.id,
+        tags: {
+          connect: [
+            { slug: "united-kingdom" },
+            { slug: "student-visa" },
+            { slug: "study-abroad" },
+          ],
+        },
         status: PostStatus.LIVE,
         isPublished: true,
         isFeatured: true,
@@ -250,6 +257,13 @@ async function main() {
 <p>Processing times vary by country and season. Apply early and confirm current timelines and fees on the official Immigration, Refugees and Citizenship Canada (IRCC) website before submitting.</p>`,
         categoryId: visaCategory.id,
         authorId: author.id,
+        tags: {
+          connect: [
+            { slug: "canada" },
+            { slug: "student-visa" },
+            { slug: "study-abroad" },
+          ],
+        },
         status: PostStatus.LIVE,
         isPublished: true,
         isFeatured: true,
@@ -330,6 +344,9 @@ async function main() {
 <p>Apply to several scholarships that match your profile, tailor each application to the provider's goals, and submit complete documentation before the deadline. Verify every detail with the official scholarship provider before applying.</p>`,
         categoryId: scholarshipsCategory.id,
         authorId: author.id,
+        tags: {
+          connect: [{ slug: "scholarships" }, { slug: "study-abroad" }],
+        },
         status: PostStatus.LIVE,
         isPublished: true,
         isFeatured: false,
@@ -409,6 +426,14 @@ async function main() {
 <p>This comparison summarises publicly available guidance from official government and university sources. It is intended as an indicative overview, not financial or immigration advice. Always confirm current figures, eligibility, and rules with official sources before making decisions.</p>`,
         categoryId: intelligenceCategory.id,
         authorId: author.id,
+        tags: {
+          connect: [
+            { slug: "united-kingdom" },
+            { slug: "canada" },
+            { slug: "germany" },
+            { slug: "study-abroad" },
+          ],
+        },
         status: PostStatus.LIVE,
         isPublished: true,
         isFeatured: false,
@@ -463,12 +488,12 @@ async function main() {
 
   const adminUser = await prisma.adminUser.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: { role: UserRole.SYSTEMS_ADMIN, isActive: true },
     create: {
       email: adminEmail,
       passwordHash: hashedPassword,
       name: "Crest Study Consult Admin",
-      role: UserRole.ADMIN,
+      role: UserRole.SYSTEMS_ADMIN,
     },
   });
   console.log(`  ✓ ${adminUser.email}`);

@@ -350,7 +350,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                         href={(article.ctaBlock as { ctaLink: string }).ctaLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-navy-700 text-white font-medium rounded-lg hover:bg-navy-800 transition-colors"
+                        className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
                       >
                         {(article.ctaBlock as { ctaText: string }).ctaText}
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -376,10 +376,12 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                   <footer className="mt-12 pt-8 border-t border-gray-200">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
-                          <span className="text-teal-700 font-semibold text-lg">
-                            {article.author.name.charAt(0)}
-                          </span>
+                        <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center overflow-hidden">
+                          <img
+                            src={BRAND.logo}
+                            alt={article.author.name}
+                            className="w-7 h-7 object-contain"
+                          />
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">{article.author.name}</p>
@@ -498,7 +500,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
             </p>
             <Link
               to="/"
-              className="inline-flex items-center gap-2 mt-8 px-6 py-3 bg-navy-700 text-white font-medium rounded-lg hover:bg-navy-800 transition-colors"
+              className="inline-flex items-center gap-2 mt-8 px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

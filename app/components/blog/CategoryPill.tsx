@@ -33,7 +33,7 @@ export function CategoryPill({
         "rounded-full font-medium transition-colors whitespace-nowrap",
         sizes[size],
         isActive
-          ? "bg-navy-700 text-white"
+          ? "bg-green-600 text-white"
           : "bg-gray-100 text-gray-700 hover:bg-gray-200",
         className
       )}

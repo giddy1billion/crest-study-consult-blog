@@ -104,7 +104,7 @@ export function ResearchModule({ className }: ResearchModuleProps) {
                   className={cn(
                     "px-4 py-2 text-sm font-medium rounded-md transition-colors",
                     activeCity === cityKey
-                      ? "text-white bg-navy-700"
+                      ? "text-white bg-green-600"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   )}
                 >

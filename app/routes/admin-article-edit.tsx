@@ -680,7 +680,7 @@ export default function AdminArticleEdit({ loaderData }: Route.ComponentProps) {
             ) : (
               <Form method="post"><input type="hidden" name="intent" value="publish" />
                 <button type="submit" disabled={isSubmitting || article.status !== "READY"}
-                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-navy-700 rounded-xl hover:bg-navy-800 shadow-lg shadow-navy-700/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 shadow-lg shadow-green-600/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Publish
                 </button>
               </Form>
@@ -834,7 +834,7 @@ export default function AdminArticleEdit({ loaderData }: Route.ComponentProps) {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Actions</h3>
               <div className="space-y-3">
                 <button type="submit" disabled={isSubmitting || saveStatus === "saving"}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-navy-700 text-white text-sm font-medium rounded-xl hover:bg-navy-800 shadow-lg shadow-navy-700/25 transition-all disabled:opacity-50">
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 shadow-lg shadow-green-600/25 transition-all disabled:opacity-50">
                   {isSubmitting ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Saving...</>
                     : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Save changes</>}
                 </button>

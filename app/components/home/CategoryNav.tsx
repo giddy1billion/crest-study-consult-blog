@@ -26,7 +26,7 @@ export function CategoryNav({ activeCategory, className }: CategoryNavProps) {
               className={cn(
                 "flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors whitespace-nowrap",
                 activeCategory === category.slug
-                  ? "bg-navy-700 text-white"
+                  ? "bg-green-600 text-white"
                   : "bg-white text-gray-700 border border-gray-200 hover:border-teal-300 hover:text-teal-600"
               )}
             >

@@ -227,12 +227,15 @@ export function apiSuccess<T>(data: T, status = 200): Response {
 // ============================================
 
 export const VALID_ROLES = [
+  "SYSTEMS_ADMIN",
   "SUPER_ADMIN",
   "ADMIN", 
   "EDITOR", 
   "WRITER", 
   "SEO_LEAD", 
-  "RESEARCHER"
+  "RESEARCHER",
+  "CONSULTANT",
+  "OPERATIONS"
 ] as const;
 
 export type ValidRole = typeof VALID_ROLES[number];

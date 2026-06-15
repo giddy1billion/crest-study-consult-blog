@@ -167,7 +167,7 @@ docker run -p 3000:3000 Crest Study Consult-blog
 
 - Always use the full name **Crest Study Consult** (never "Crest" alone)
 - Legal entity: **Crest Study Consult LTD**
-- Primary color: teal `#069494`
+- Primary color: green `#5CB031` (action) · charcoal slate `#3A464F` (structure) · gold `#E0A02A` (accent)
 - Voice: academic, advisory, structured, neutral (warm and inspirational on brand surfaces)
 
 ## License

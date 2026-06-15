@@ -180,10 +180,10 @@ function getInputClasses(variant: NewsletterVariant): string {
 
 function getButtonClasses(variant: NewsletterVariant): string {
   const base = {
-    inline: "inline-flex items-center justify-center px-4 py-2 bg-navy-700 text-white text-sm font-medium rounded-lg hover:bg-navy-800 transition-colors disabled:opacity-50",
-    card: "inline-flex items-center justify-center px-5 py-2.5 bg-navy-700 text-white text-sm font-medium rounded-xl hover:bg-navy-800 transition-colors disabled:opacity-50",
-    footer: "inline-flex items-center justify-center px-5 py-2.5 bg-navy-700 text-white text-sm font-medium rounded-xl hover:bg-navy-800 transition-colors disabled:opacity-50",
-    hero: "inline-flex items-center justify-center px-6 py-3 bg-navy-700 text-white font-medium rounded-xl shadow-lg shadow-navy-700/25 hover:bg-navy-800 transition-all disabled:opacity-50",
+    inline: "inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50",
+    card: "inline-flex items-center justify-center px-5 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50",
+    footer: "inline-flex items-center justify-center px-5 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50",
+    hero: "inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-medium rounded-xl shadow-lg shadow-green-600/25 hover:bg-green-700 transition-all disabled:opacity-50",
   };
   return base[variant];
 }

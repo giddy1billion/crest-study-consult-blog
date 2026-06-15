@@ -160,7 +160,9 @@ generateIcons();
 
 ## Brand Colors
 
-- **Primary (teal):** `#069494`
+- **Primary (green):** `#5CB031`
+- **Structure (charcoal slate):** `#3A464F`
+- **Accent (gold):** `#E0A02A`
 - **Background:** `#ffffff`
 
 ## Notes

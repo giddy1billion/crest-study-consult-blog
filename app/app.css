@@ -101,13 +101,13 @@
   --color-gold-950: #3d2509;
 
   /* ----------------------------------------
-     Neutrals — Slate scale (supporting)
+     Neutrals — Cool slate scale (supporting)
      gray-50  = #F8FAFC (card / surface)
      gray-200 = #E2E8F0 (border / divider)
      gray-400 = #94A3B8 (muted / caption)
      gray-500 = #64748B (secondary / meta)
      gray-800 = #1E293B (body text)
-     gray-900 = #0C2147 (navy — headlines / footer)
+     gray-900 = #1F262B (charcoal — headlines / footer)
      ---------------------------------------- */
   --color-gray-50: #f8fafc;
   --color-gray-100: #f1f5f9;

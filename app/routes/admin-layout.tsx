@@ -260,7 +260,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
                     group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                     transition-all duration-200
                     ${isActive
-                      ? "bg-navy-700 text-white shadow-lg shadow-navy-700/25"
+                      ? "bg-green-600 text-white shadow-lg shadow-green-600/25"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }
                   `}
@@ -275,6 +275,33 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
                 </NavLink>
               );
             })}
+
+            {user.role === "SYSTEMS_ADMIN" && (
+              <div className="pt-6">
+                <p className="px-3 mb-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                  Administration
+                </p>
+                <NavLink
+                  to="/admin/users"
+                  onClick={() => setSidebarOpen(false)}
+                  className={() => {
+                    const active = location.pathname.startsWith("/admin/users");
+                    return `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? "bg-green-600 text-white shadow-lg shadow-green-600/25"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`;
+                  }}
+                >
+                  <span className="transition-transform duration-200 group-hover:scale-110">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a3 3 0 10-2.83-4M5 11a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  </span>
+                  Team &amp; access
+                </NavLink>
+              </div>
+            )}
 
             <div className="pt-6">
               <p className="px-3 mb-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
@@ -308,7 +335,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
             <div className="p-3 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-navy-600 to-navy-700 flex items-center justify-center text-white font-semibold shadow-lg shadow-navy-700/25">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-navy-600 to-navy-700 flex items-center justify-center text-white font-semibold shadow-lg shadow-green-600/25">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-teal-400 border-2 border-white rounded-full" />
@@ -489,7 +516,7 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
             {/* New Article button */}
             <Link
               to="/admin/articles/new"
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-navy-700 text-white text-sm font-medium rounded-xl hover:bg-navy-800 hover:shadow-lg hover:shadow-navy-700/25 transition-all duration-200"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 hover:shadow-lg hover:shadow-green-600/25 transition-all duration-200"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
