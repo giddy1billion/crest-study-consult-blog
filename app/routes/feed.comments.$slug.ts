@@ -82,7 +82,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     <language>en</language>
     <lastBuildDate>${comments.length > 0 ? new Date(comments[0].createdAt).toUTCString() : new Date().toUTCString()}</lastBuildDate>
     <ttl>30</ttl>
-    <managingEditor>research@Crest Study Consult.africa (${BRAND.name} Research Team)</managingEditor>
+    <managingEditor>research@creststudyconsult.com (${BRAND.name} Research Team)</managingEditor>
     <copyright>© ${new Date().getFullYear()} ${BRAND.legalName}. All rights reserved.</copyright>
     <image>
       <url>${BRAND.logo}</url>

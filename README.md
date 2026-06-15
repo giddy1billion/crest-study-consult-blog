@@ -82,7 +82,7 @@ npm run db:reset      # Reset and re-seed database
 
 After seeding, log in at `/admin/login`:
 
-- **Email:** `admin@Crest Study Consult.africa`
+- **Email:** `admin@creststudyconsult.com`
 - **Password:** `Crest Study ConsultAdmin2025!`
 
 ⚠️ Change this password immediately in production.

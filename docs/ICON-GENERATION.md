@@ -1,13 +1,13 @@
 # Crest Study Consult Icon Generation Guide
 
-Icons are generated automatically from the source logo at `https://www.Crest Study Consult.africa/logo.png`.
+Icons are generated automatically from the source logo at `https://www.creststudyconsult.com/logo.png`.
 
 ## Quick Start
 
 ```bash
 # Download source logo and OG image
-curl -o public/logo-source.png "https://www.Crest Study Consult.africa/logo.png"
-curl -o public/og-image.png "https://www.Crest Study Consult.africa/og-image.png"
+curl -o public/logo-source.png "https://www.creststudyconsult.com/logo.png"
+curl -o public/og-image.png "https://www.creststudyconsult.com/og-image.png"
 
 # Generate all icons
 npm run generate-icons
@@ -66,7 +66,7 @@ npm run generate-icons
 
 ```bash
 # Download source logo
-curl -o logo-source.png "https://www.Crest Study Consult.africa/logo.png"
+curl -o logo-source.png "https://www.creststudyconsult.com/logo.png"
 
 # Generate standard favicons
 convert logo-source.png -resize 16x16 public/favicon-16x16.png

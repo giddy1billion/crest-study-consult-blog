@@ -122,10 +122,7 @@ function getResultUrl(result: SearchResult): string {
     // Link to the article with a hash to the comments section
     return `/${result.post.category.slug}/${result.post.slug}#comments`;
   }
-  // For reports, check if it's in market-intelligence
-  if (result.resultType === "report" && result.category.slug === "market-intelligence") {
-    return `/market-intelligence/${result.slug}`;
-  }
+  // Reports live under their category (e.g. study-intelligence)
   return `/${result.category.slug}/${result.slug}`;
 }
 

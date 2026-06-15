@@ -126,7 +126,7 @@ echo ""
 api_call "GET" "/api/super/users" "" "List all admin users"
 
 # Create test user
-TEST_EMAIL="test-$(date +%s)@Crest Study Consult.africa"
+TEST_EMAIL="test-$(date +%s)@creststudyconsult.com"
 CREATE_RESPONSE=$(api_call "POST" "/api/super/users" \
   "{\"email\":\"$TEST_EMAIL\",\"password\":\"TestP@ssw0rd123!\",\"name\":\"Test User\",\"role\":\"WRITER\"}" \
   "Create new admin user")

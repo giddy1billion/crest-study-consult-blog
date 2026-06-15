@@ -135,7 +135,7 @@ async function testUsersAPI() {
   log("yellow", "\n━━━ Users API Tests ━━━");
 
   let testUserId: string | null = null;
-  const testEmail = `test-${Date.now()}@Crest Study Consult.africa`;
+  const testEmail = `test-${Date.now()}@creststudyconsult.com`;
 
   await test("GET /api/super/users - List users", async () => {
     const { status, data } = await apiCall<{ success: boolean; data: { users: unknown[] } }>(
@@ -169,7 +169,7 @@ async function testUsersAPI() {
       "POST",
       "/api/super/users",
       {
-        email: `weak-${Date.now()}@Crest Study Consult.africa`,
+        email: `weak-${Date.now()}@creststudyconsult.com`,
         password: "weak",
         name: "Weak Password User",
       }

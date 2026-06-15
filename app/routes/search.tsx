@@ -353,9 +353,7 @@ export default function SearchPage({ loaderData }: Route.ComponentProps) {
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                       {articleResults.map((result: any) => {
                         const badge = resultTypeBadge[result.resultType as keyof typeof resultTypeBadge];
-                        const url = result.resultType === "report" && result.category.slug === "market-intelligence"
-                          ? `/market-intelligence/${result.slug}`
-                          : `/${result.category.slug}/${result.slug}`;
+                        const url = `/${result.category.slug}/${result.slug}`;
                         
                         return (
                           <Link

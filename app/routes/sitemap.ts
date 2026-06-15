@@ -3,8 +3,6 @@ import { BRAND, CATEGORIES, CACHE_HEADERS } from "~/utils/constants";
 import { 
   getAllPublishedPosts, 
   getAllCategories,
-  getAllResearchReports,
-  getAllCities,
   getAllAuthorsWithPosts,
   getAllTagsWithPosts,
 } from "~/utils/queries.server";
@@ -17,11 +15,9 @@ export async function loader({}: Route.LoaderArgs) {
   const baseUrl = BRAND.url;
 
   // Fetch all data from database
-  const [posts, categories, reports, cities, authors, tags] = await Promise.all([
+  const [posts, categories, authors, tags] = await Promise.all([
     getAllPublishedPosts(),
     getAllCategories(),
-    getAllResearchReports(),
-    getAllCities(),
     getAllAuthorsWithPosts(),
     getAllTagsWithPosts(),
   ]);
@@ -29,7 +25,7 @@ export async function loader({}: Route.LoaderArgs) {
   // Static pages
   const staticPages = [
     { url: baseUrl, lastmod: new Date().toISOString(), priority: "1.0", changefreq: "daily" },
-    { url: `${baseUrl}/research`, lastmod: new Date().toISOString(), priority: "0.9", changefreq: "weekly" },
+    { url: `${baseUrl}/study-intelligence`, lastmod: new Date().toISOString(), priority: "0.9", changefreq: "weekly" },
   ];
 
   // Category pages from database
@@ -45,22 +41,6 @@ export async function loader({}: Route.LoaderArgs) {
     url: `${baseUrl}/${post.category.slug}/${post.slug}`,
     lastmod: post.updatedAt.toISOString(),
     priority: "0.7",
-    changefreq: "monthly",
-  }));
-
-  // Research report pages
-  const reportPages = reports.map((report) => ({
-    url: `${baseUrl}/research/${report.slug}`,
-    lastmod: report.updatedAt.toISOString(),
-    priority: "0.7",
-    changefreq: "monthly",
-  }));
-
-  // City pages
-  const cityPages = cities.map((city) => ({
-    url: `${baseUrl}/cities/${city.slug}`,
-    lastmod: city.updatedAt.toISOString(),
-    priority: "0.6",
     changefreq: "monthly",
   }));
 
@@ -84,8 +64,6 @@ export async function loader({}: Route.LoaderArgs) {
     ...staticPages, 
     ...categoryPages, 
     ...articlePages,
-    ...reportPages,
-    ...cityPages,
     ...authorPages,
     ...tagPages,
   ];

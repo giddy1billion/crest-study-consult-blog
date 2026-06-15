@@ -44,8 +44,8 @@ export async function loader({}: Route.LoaderArgs) {
     <language>en</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <ttl>60</ttl>
-    <managingEditor>research@Crest Study Consult.africa (${BRAND.name} Research Team)</managingEditor>
-    <webMaster>tech@Crest Study Consult.africa (${BRAND.name} Tech Team)</webMaster>
+    <managingEditor>research@creststudyconsult.com (${BRAND.name} Research Team)</managingEditor>
+    <webMaster>tech@creststudyconsult.com (${BRAND.name} Tech Team)</webMaster>
     <copyright>© ${new Date().getFullYear()} ${BRAND.legalName}. All rights reserved.</copyright>
     <image>
       <url>${BRAND.logo}</url>

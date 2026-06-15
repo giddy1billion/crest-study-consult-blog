@@ -27,8 +27,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     decodedUrl = targetUrl;
   }
 
-  // Only allow redirects to Crest Study Consult.africa domains for security
-  const allowedDomains = ["blog.creststudyconsult.com", "Crest Study Consult.africa", "www.Crest Study Consult.africa"];
+  // Only allow redirects to creststudyconsult.com domains for security
+  const allowedDomains = ["blog.creststudyconsult.com", "creststudyconsult.com", "www.creststudyconsult.com"];
   try {
     const parsedUrl = new URL(decodedUrl);
     if (!allowedDomains.some((domain) => parsedUrl.hostname === domain)) {
