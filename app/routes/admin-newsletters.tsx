@@ -8,6 +8,7 @@
 import type { Route } from "./+types/admin-newsletters";
 import { data, useLoaderData, useFetcher, useSearchParams, useSubmit, Form, Link } from "react-router";
 import { requireAdmin } from "~/utils/session.server";
+import { recordAdminAudit, AUDIT_ACTIONS, AUDIT_RESOURCES } from "~/utils/audit.server";
 import { db } from "~/utils/db.server";
 import {
   syncSubscribersFromResend,
@@ -101,9 +102,31 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireAdmin(request);
+  const actor = await requireAdmin(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
+
+  // Record every subscriber/segment mutation through this route. Keyed by
+  // intent so coverage stays complete as new intents are added.
+  if (typeof intent === "string" && intent) {
+    const subscriberId = String(formData.get("subscriberId") || "") || null;
+    const segmentId = String(formData.get("segmentId") || "") || null;
+    const email = String(formData.get("email") || "") || undefined;
+    const selectedIds = formData.getAll("subscriberIds").map(String).filter(Boolean);
+    const resource = intent === "sync" ? AUDIT_RESOURCES.NEWSLETTERS : AUDIT_RESOURCES.SUBSCRIBERS;
+    await recordAdminAudit(actor, {
+      request,
+      action:
+        intent === "sync" ? AUDIT_ACTIONS.SYNC_SUBSCRIBERS : `NEWSLETTER_${intent.toUpperCase().replace(/-/g, "_")}`,
+      resource,
+      resourceId: subscriberId || segmentId,
+      details: {
+        intent,
+        ...(email ? { email } : {}),
+        ...(selectedIds.length ? { count: selectedIds.length } : {}),
+      },
+    });
+  }
 
   if (intent === "sync") {
     const result = await syncSubscribersFromResend();

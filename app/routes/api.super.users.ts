@@ -14,6 +14,7 @@
 
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { db } from "~/utils/db.server";
+import { sendAdminInviteEmail } from "~/utils/email.server";
 import {
   requireApiAuth,
   parseJsonBody,
@@ -123,6 +124,8 @@ export async function action({ request }: ActionFunctionArgs) {
           passwordHash,
           name,
           role: role as any,
+          // Treat the provided password as temporary: require a change on first login.
+          mustChangePassword: true,
         },
         select: {
           id: true,
@@ -134,15 +137,32 @@ export async function action({ request }: ActionFunctionArgs) {
         },
       });
 
+      // Email the invitation with temporary credentials (best-effort).
+      let emailSent = false;
+      try {
+        const result = await sendAdminInviteEmail({
+          to: email,
+          name,
+          tempPassword: password,
+          role,
+        });
+        emailSent = result.success;
+        if (!result.success) {
+          console.error("Failed to send admin invite email:", result.error);
+        }
+      } catch (error) {
+        console.error("Failed to send admin invite email:", error);
+      }
+
       await logAuditEvent({
         action: "CREATE_USER",
         resource: "admin_users",
         resourceId: user.id,
-        details: { email, name, role },
+        details: { email, name, role, invited: true, emailSent },
         request,
       });
 
-      return apiSuccess({ user }, 201);
+      return apiSuccess({ user, emailSent }, 201);
     } catch (error) {
       console.error("Error creating user:", error);
       return apiError("Failed to create user", 500);

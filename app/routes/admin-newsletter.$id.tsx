@@ -8,6 +8,7 @@
 import type { Route } from "./+types/admin-newsletter.$id";
 import { data, useLoaderData, useFetcher, Link } from "react-router";
 import { requireAdmin } from "~/utils/session.server";
+import { recordAdminAudit, AUDIT_ACTIONS, AUDIT_RESOURCES } from "~/utils/audit.server";
 import { db } from "~/utils/db.server";
 import { sendTestNewsletter, sendNewsletter, checkEmailStatus, resendTestNewsletter, getSegments } from "~/utils/email.server";
 import { useState } from "react";
@@ -129,7 +130,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  await requireAdmin(request);
+  const actor = await requireAdmin(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -179,6 +180,16 @@ export async function action({ request, params }: Route.ActionArgs) {
       segmentIds,
     });
 
+    if (result.success) {
+      await recordAdminAudit(actor, {
+        request,
+        action: AUDIT_ACTIONS.SEND_NEWSLETTER,
+        resource: AUDIT_RESOURCES.NEWSLETTERS,
+        resourceId: params.id,
+        details: { sentCount: result.sentCount, segmentIds },
+      });
+    }
+
     return data({
       success: result.success,
       message: result.success
@@ -202,6 +213,16 @@ export async function action({ request, params }: Route.ActionArgs) {
       segmentIds,
     });
 
+    if (result.success) {
+      await recordAdminAudit(actor, {
+        request,
+        action: AUDIT_ACTIONS.SCHEDULE_NEWSLETTER,
+        resource: AUDIT_RESOURCES.NEWSLETTERS,
+        resourceId: params.id,
+        details: { scheduledFor, segmentIds },
+      });
+    }
+
     return data({
       success: result.success,
       message: result.success
@@ -220,6 +241,14 @@ export async function action({ request, params }: Route.ActionArgs) {
         subject: subject || undefined,
         preheader: preheader || null,
       },
+    });
+
+    await recordAdminAudit(actor, {
+      request,
+      action: AUDIT_ACTIONS.UPDATE_NEWSLETTER,
+      resource: AUDIT_RESOURCES.NEWSLETTERS,
+      resourceId: params.id,
+      details: { subject },
     });
 
     return data({ success: true, message: "Newsletter updated" });

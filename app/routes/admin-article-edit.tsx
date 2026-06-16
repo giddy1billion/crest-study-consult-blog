@@ -1,6 +1,8 @@
 import type { Route } from "./+types/admin-article-edit";
 import { data, redirect, Form, useNavigation, useActionData, Link, useFetcher } from "react-router";
 import { db } from "~/utils/db.server";
+import { getAdminUser } from "~/utils/session.server";
+import { recordAdminAudit, AUDIT_ACTIONS, AUDIT_RESOURCES } from "~/utils/audit.server";
 import { calculateReadingTime, generateSlug } from "~/utils/helpers";
 import { BRAND, SEO_DEFAULTS } from "~/utils/constants";
 import type { PostStatus } from "@prisma/client";
@@ -83,6 +85,7 @@ export async function loader({ params }: Route.LoaderArgs) {
  */
 export async function action({ request, params }: Route.ActionArgs) {
   const { id } = params;
+  const actor = await getAdminUser(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -96,6 +99,12 @@ export async function action({ request, params }: Route.ActionArgs) {
         status: "DELETE_REQUESTED",
       },
     });
+    await recordAdminAudit(actor, {
+      request,
+      action: AUDIT_ACTIONS.REQUEST_ARTICLE_DELETION,
+      resource: AUDIT_RESOURCES.ARTICLES,
+      resourceId: id,
+    });
     return data({ 
       success: true, 
       message: "Deletion requested. Article unpublished and awaiting admin approval." 
@@ -107,6 +116,12 @@ export async function action({ request, params }: Route.ActionArgs) {
       where: { id },
       data: { isPublished: true, status: "LIVE", publishedAt: new Date() },
     });
+    await recordAdminAudit(actor, {
+      request,
+      action: AUDIT_ACTIONS.PUBLISH_ARTICLE,
+      resource: AUDIT_RESOURCES.ARTICLES,
+      resourceId: id,
+    });
     return data({ success: true, message: "Article published successfully" });
   }
 
@@ -115,12 +130,25 @@ export async function action({ request, params }: Route.ActionArgs) {
       where: { id },
       data: { isPublished: false, status: "READY" },
     });
+    await recordAdminAudit(actor, {
+      request,
+      action: AUDIT_ACTIONS.UNPUBLISH_ARTICLE,
+      resource: AUDIT_RESOURCES.ARTICLES,
+      resourceId: id,
+    });
     return data({ success: true, message: "Article unpublished" });
   }
 
   if (intent === "status") {
     const status = formData.get("status") as PostStatus;
     await db.post.update({ where: { id }, data: { status } });
+    await recordAdminAudit(actor, {
+      request,
+      action: AUDIT_ACTIONS.CHANGE_ARTICLE_STATUS,
+      resource: AUDIT_RESOURCES.ARTICLES,
+      resourceId: id,
+      details: { status },
+    });
     return data({ success: true, message: `Status changed to ${status.replace(/_/g, " ")}` });
   }
 
@@ -215,6 +243,17 @@ export async function action({ request, params }: Route.ActionArgs) {
       tags: tagsJson ? { set: tagConnections } : undefined,
     },
   });
+
+  // Skip auditing background autosaves to avoid noise; record manual saves only.
+  if (formData.get("autosave") !== "true") {
+    await recordAdminAudit(actor, {
+      request,
+      action: AUDIT_ACTIONS.UPDATE_ARTICLE,
+      resource: AUDIT_RESOURCES.ARTICLES,
+      resourceId: id,
+      details: { title },
+    });
+  }
 
   return data({ success: true, message: "Changes saved successfully" });
 }
@@ -565,6 +604,7 @@ export default function AdminArticleEdit({ loaderData }: Route.ComponentProps) {
       fd.append("commentsEnabled", formData.commentsEnabled ? "on" : "");
       fd.append("sourceNotes", formData.sourceNotes);
       fd.append("tags", formData.tags);
+      fd.append("autosave", "true");
       
       autoSaveFetcher.submit(fd, { method: "post" });
     }, 3000);

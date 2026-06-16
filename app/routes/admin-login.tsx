@@ -11,6 +11,7 @@ import {
   getActiveAdminById,
 } from "~/utils/session.server";
 import { isOtpExempt, issueOtp, verifyOtp } from "~/utils/otp.server";
+import { recordAudit, AUDIT_ACTIONS, AUDIT_RESOURCES } from "~/utils/audit.server";
 import { BRAND } from "~/utils/constants";
 import { useState } from "react";
 import { 
@@ -180,6 +181,16 @@ export async function action({ request }: Route.ActionArgs) {
       timestamp: new Date(),
       details: { stage: "otp" },
     });
+    await recordAudit({
+      request,
+      actorId: otpUser.id,
+      actorEmail: otpUser.email,
+      actorRole: otpUser.role,
+      action: AUDIT_ACTIONS.LOGIN_SUCCESS,
+      resource: AUDIT_RESOURCES.AUTH,
+      resourceId: otpUser.id,
+      details: { method: "otp" },
+    });
 
     return completeOtpLogin({
       userId: otpUser.id,
@@ -269,6 +280,13 @@ export async function action({ request }: Route.ActionArgs) {
       email,
       timestamp: new Date(),
     });
+    await recordAudit({
+      request,
+      actorEmail: email,
+      action: AUDIT_ACTIONS.LOGIN_FAILED,
+      resource: AUDIT_RESOURCES.AUTH,
+      details: { stage: "credentials", email },
+    });
     
     // Generic error message (don't reveal if email exists)
     const remainingHint = rateLimit.remainingAttempts !== undefined && rateLimit.remainingAttempts <= 3
@@ -292,6 +310,16 @@ export async function action({ request }: Route.ActionArgs) {
       timestamp: new Date(),
       details: { otp: false },
     });
+    await recordAudit({
+      request,
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: AUDIT_ACTIONS.LOGIN_SUCCESS,
+      resource: AUDIT_RESOURCES.AUTH,
+      resourceId: user.id,
+      details: { method: "password", otpExempt: true },
+    });
 
     return createAdminSession({
       request,
@@ -311,6 +339,15 @@ export async function action({ request }: Route.ActionArgs) {
     email: user.email,
     timestamp: new Date(),
     details: { otp: true, stage: "credentials" },
+  });
+  await recordAudit({
+    request,
+    actorId: user.id,
+    actorEmail: user.email,
+    actorRole: user.role,
+    action: AUDIT_ACTIONS.LOGIN_OTP_SENT,
+    resource: AUDIT_RESOURCES.AUTH,
+    resourceId: user.id,
   });
 
   return data<ActionData>(

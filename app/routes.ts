@@ -57,6 +57,7 @@ export default [
   
   // Admin routes (Phase 3)
   route("admin/login", "routes/admin-login.tsx"),
+  route("admin/change-password", "routes/admin-change-password.tsx"),
   layout("routes/admin-layout.tsx", [
     route("admin", "routes/admin-dashboard.tsx"),
     route("admin/articles", "routes/admin-articles.tsx"),
@@ -69,6 +70,7 @@ export default [
     route("admin/users", "routes/admin-users.tsx"),
     route("admin/users/new", "routes/admin-user-new.tsx"),
     route("admin/users/:id/edit", "routes/admin-user-edit.tsx"),
+    route("admin/audit", "routes/admin-audit.tsx"),
     route("admin/logout", "routes/admin-logout.tsx"),
     // Admin 404 catch-all (must be last in layout)
     route("admin/*", "routes/admin-not-found.tsx"),

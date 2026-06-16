@@ -9,6 +9,7 @@
 
 import { createCookie, redirect } from "react-router";
 import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 import { db } from "./db.server";
 import { signJwt, verifyJwt, signToken, verifyToken } from "./jwt.server";
 import { canManageAdmins } from "./constants";
@@ -65,6 +66,8 @@ export type AdminUser = {
   email: string;
   name: string;
   role: string;
+  /** Present when loaded from the DB; true forces a password change before dashboard access. */
+  mustChangePassword?: boolean;
 };
 
 // ============================================
@@ -115,6 +118,7 @@ export async function getAdminUser(request: Request): Promise<AdminUser | null> 
       role: true,
       isActive: true,
       tokenVersion: true,
+      mustChangePassword: true,
     },
   });
 
@@ -128,6 +132,7 @@ export async function getAdminUser(request: Request): Promise<AdminUser | null> 
     email: user.email,
     name: user.name,
     role: user.role,
+    mustChangePassword: user.mustChangePassword,
   };
 }
 
@@ -421,4 +426,36 @@ export function validatePassword(password: string): { valid: boolean; error?: st
     return { valid: false, error: "Password must contain a number" };
   }
   return { valid: true };
+}
+
+/**
+ * Generate a strong temporary password for a newly invited admin.
+ *
+ * Always satisfies validatePassword(): includes upper, lower, digit, and a
+ * symbol, with the remaining characters drawn from a secure RNG. The result is
+ * shuffled so the guaranteed characters are not positionally predictable.
+ */
+export function generateTempPassword(length = 16): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O for legibility
+  const lower = "abcdefghijkmnpqrstuvwxyz"; // no l/o
+  const digits = "23456789"; // no 0/1
+  const symbols = "!@#$%^&*-_=+";
+  const all = upper + lower + digits + symbols;
+
+  const pick = (set: string) => set[crypto.randomInt(0, set.length)];
+
+  const required = [pick(upper), pick(lower), pick(digits), pick(symbols)];
+  const remaining = Array.from({ length: Math.max(length, 12) - required.length }, () =>
+    pick(all)
+  );
+
+  const chars = [...required, ...remaining];
+
+  // Fisher–Yates shuffle with a secure RNG.
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+
+  return chars.join("");
 }

@@ -145,7 +145,10 @@ interface AuditEventParams {
 }
 
 /**
- * Log an audit event for security tracking
+ * Log an audit event for security tracking.
+ *
+ * Persists to the AuditLog table via the centralized recorder. Best-effort —
+ * never throws so it cannot break the API action it describes.
  */
 export async function logAuditEvent({
   action,
@@ -155,27 +158,15 @@ export async function logAuditEvent({
   details,
   request,
 }: AuditEventParams): Promise<void> {
-  try {
-    const ipAddress = request.headers.get("X-Forwarded-For") 
-      || request.headers.get("X-Real-IP") 
-      || "unknown";
-    const userAgent = request.headers.get("User-Agent") || "unknown";
-
-    // Log to database if AuditLog table exists, otherwise console log
-    // For now, we log to console - schema migration adds the table
-    console.log("[AUDIT]", {
-      timestamp: new Date().toISOString(),
-      action,
-      resource,
-      resourceId,
-      userId,
-      details,
-      ipAddress,
-      userAgent,
-    });
-  } catch (error) {
-    console.error("Failed to log audit event:", error);
-  }
+  const { recordAudit } = await import("./audit.server");
+  await recordAudit({
+    request,
+    actorId: userId ?? null,
+    action,
+    resource,
+    resourceId: resourceId ?? null,
+    details,
+  });
 }
 
 // ============================================

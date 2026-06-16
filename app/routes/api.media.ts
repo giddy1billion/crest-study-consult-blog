@@ -8,6 +8,7 @@
 import type { Route } from "./+types/api.media";
 import { data } from "react-router";
 import { requireAdmin } from "~/utils/session.server";
+import { recordAdminAudit, AUDIT_ACTIONS, AUDIT_RESOURCES } from "~/utils/audit.server";
 import { 
   uploadFile, 
   uploadFiles, 
@@ -91,6 +92,14 @@ export async function action({ request }: Route.ActionArgs) {
           return data({ error: result.error }, { status: 400 });
         }
         
+        await recordAdminAudit(user, {
+          request,
+          action: AUDIT_ACTIONS.UPLOAD_MEDIA,
+          resource: AUDIT_RESOURCES.MEDIA,
+          resourceId: result.media?.id,
+          details: { folder, fileName: files[0].name, size: files[0].size },
+        });
+        
         return data({ 
           success: true, 
           media: result.media,
@@ -102,6 +111,13 @@ export async function action({ request }: Route.ActionArgs) {
       const results = await uploadFiles(files, uploadOptions);
       const successful = results.filter(r => r.success);
       const failed = results.filter(r => !r.success);
+      
+      await recordAdminAudit(user, {
+        request,
+        action: AUDIT_ACTIONS.UPLOAD_MEDIA,
+        resource: AUDIT_RESOURCES.MEDIA,
+        details: { folder, count: successful.length, failed: failed.length },
+      });
       
       return data({
         success: failed.length === 0,
@@ -138,6 +154,13 @@ export async function action({ request }: Route.ActionArgs) {
           return data({ error: result.error }, { status: 400 });
         }
         
+        await recordAdminAudit(user, {
+          request,
+          action: AUDIT_ACTIONS.DELETE_MEDIA,
+          resource: AUDIT_RESOURCES.MEDIA,
+          resourceId: mediaIds[0],
+        });
+        
         return data({ success: true, message: "File deleted" });
       }
       
@@ -145,6 +168,13 @@ export async function action({ request }: Route.ActionArgs) {
       const results = await deleteFiles(mediaIds);
       const successful = results.filter(r => r.success);
       const failed = results.filter(r => !r.success);
+      
+      await recordAdminAudit(user, {
+        request,
+        action: AUDIT_ACTIONS.DELETE_MEDIA,
+        resource: AUDIT_RESOURCES.MEDIA,
+        details: { count: successful.length, failed: failed.length, ids: mediaIds },
+      });
       
       return data({
         success: failed.length === 0,
@@ -178,6 +208,13 @@ export async function action({ request }: Route.ActionArgs) {
         alt: alt || undefined,
         caption: caption || undefined,
         tags: tags || undefined,
+      });
+      
+      await recordAdminAudit(user, {
+        request,
+        action: AUDIT_ACTIONS.UPDATE_MEDIA,
+        resource: AUDIT_RESOURCES.MEDIA,
+        resourceId: id,
       });
       
       return data({ 

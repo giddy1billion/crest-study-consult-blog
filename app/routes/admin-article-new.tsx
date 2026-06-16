@@ -1,6 +1,8 @@
 import type { Route } from "./+types/admin-article-new";
 import { data, redirect, Form, useNavigation, useActionData } from "react-router";
 import { db } from "~/utils/db.server";
+import { getAdminUser } from "~/utils/session.server";
+import { recordAdminAudit, AUDIT_ACTIONS, AUDIT_RESOURCES } from "~/utils/audit.server";
 import { calculateReadingTime, generateSlug } from "~/utils/helpers";
 import { BRAND, CATEGORIES } from "~/utils/constants";
 import { useState, useEffect, useRef, type ChangeEvent, type DragEvent } from "react";
@@ -51,6 +53,7 @@ export async function loader({}: Route.LoaderArgs) {
  * Action - Create new article
  */
 export async function action({ request }: Route.ActionArgs) {
+  const actor = await getAdminUser(request);
   const formData = await request.formData();
   
   const title = formData.get("title") as string;
@@ -115,6 +118,14 @@ export async function action({ request }: Route.ActionArgs) {
       readingTimeMin: calculateReadingTime(content),
       status: "DRAFT",
     },
+  });
+
+  await recordAdminAudit(actor, {
+    request,
+    action: AUDIT_ACTIONS.CREATE_ARTICLE,
+    resource: AUDIT_RESOURCES.ARTICLES,
+    resourceId: article.id,
+    details: { title, slug, categoryId, authorId, status: "DRAFT" },
   });
 
   return redirect(`/admin/articles/${article.id}/edit`);

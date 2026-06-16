@@ -251,6 +251,129 @@ function getAdminOtpEmailHtml({
 }
 
 /**
+ * Send an admin invitation email containing temporary login credentials.
+ *
+ * Sent when a new admin account is created. The recipient must change their
+ * password on first sign-in before they can access the dashboard.
+ */
+export async function sendAdminInviteEmail({
+  to,
+  name,
+  tempPassword,
+  role,
+  inviterName,
+}: {
+  to: string;
+  name: string;
+  tempPassword: string;
+  role: string;
+  inviterName?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const loginUrl = "https://blog.creststudyconsult.com/admin/login";
+  return sendEmail({
+    to,
+    subject: "Your Crest Study Consult admin account",
+    html: getAdminInviteEmailHtml({ name, email: to, tempPassword, role, loginUrl, inviterName }),
+    text:
+      `Hi ${name},\n\n` +
+      `An administrator account has been created for you on the Crest Study Consult editorial dashboard` +
+      `${inviterName ? ` by ${inviterName}` : ""}.\n\n` +
+      `Sign in at: ${loginUrl}\n` +
+      `Email: ${to}\n` +
+      `Temporary password: ${tempPassword}\n` +
+      `Role: ${role}\n\n` +
+      `For your security you will be required to set a new password the first time you sign in, ` +
+      `before you can access the dashboard. This temporary password can only be used once.\n\n` +
+      `If you did not expect this email, please notify the systems administrator immediately.`,
+  });
+}
+
+/**
+ * Admin invitation email HTML template
+ */
+function getAdminInviteEmailHtml({
+  name,
+  email,
+  tempPassword,
+  role,
+  loginUrl,
+  inviterName,
+}: {
+  name: string;
+  email: string;
+  tempPassword: string;
+  role: string;
+  loginUrl: string;
+  inviterName?: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Crest Study Consult admin account</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #3a464f 0%, #2e383f 100%); padding: 32px 40px;">
+              <img src="https://blog.creststudyconsult.com/logo.png" alt="Crest Study Consult" width="120" style="display: block;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <h1 style="margin: 0 0 16px; font-size: 22px; font-weight: 700; color: #111827;">
+                You've been invited as an administrator
+              </h1>
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #4b5563;">
+                Hi ${name}, an administrator account has been created for you on the Crest Study Consult
+                editorial dashboard${inviterName ? ` by ${inviterName}` : ""}. Use the temporary credentials
+                below to sign in.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px; background-color: #f3f4f6; border-radius: 12px;">
+                <tr><td style="padding: 20px 24px;">
+                  <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280;">Email</p>
+                  <p style="margin: 0 0 20px; font-size: 16px; font-weight: 600; color: #111827;">${email}</p>
+                  <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280;">Temporary password</p>
+                  <p style="margin: 0 0 20px; font-size: 18px; font-weight: 700; letter-spacing: 1px; font-family: 'Courier New', monospace; color: #111827;">${tempPassword}</p>
+                  <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280;">Role</p>
+                  <p style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">${role}</p>
+                </td></tr>
+              </table>
+              <a href="${loginUrl}" style="display: inline-block; padding: 14px 28px; background-color: #4f9a2a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 12px;">
+                Sign in to the dashboard
+              </a>
+              <p style="margin: 24px 0 0; font-size: 14px; line-height: 1.6; color: #6b7280;">
+                <strong style="color: #4b5563;">For your security</strong>, you will be required to set a new
+                password the first time you sign in, before you can access the dashboard. This temporary
+                password can only be used once.
+              </p>
+              <p style="margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: #6b7280;">
+                If you did not expect this email, please notify the systems administrator immediately.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                Crest Study Consult LTD · This is an automated security message. Please do not reply.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+/**
  * Welcome email HTML template
  */
 function getWelcomeEmailHtml(firstName?: string, email?: string): string {

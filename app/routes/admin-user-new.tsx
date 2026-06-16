@@ -5,8 +5,9 @@
  */
 
 import type { Route } from "./+types/admin-user-new";
-import { data, redirect, Form, Link, useActionData, useNavigation } from "react-router";
-import { requireSystemsAdmin, hashPassword, validatePassword } from "~/utils/session.server";
+import { data, Form, Link, useActionData, useNavigation } from "react-router";
+import { requireSystemsAdmin, hashPassword, generateTempPassword } from "~/utils/session.server";
+import { sendAdminInviteEmail } from "~/utils/email.server";
 import { db } from "~/utils/db.server";
 import { ASSIGNABLE_ROLES } from "~/utils/constants";
 import { isValidRole, VALID_ROLES } from "~/utils/api-auth.server";
@@ -23,7 +24,15 @@ export async function loader({ request }: Route.LoaderArgs) {
   return data({}, { headers: { "Cache-Control": "private, no-store" } });
 }
 
-type ActionData = { error?: string; fieldErrors?: Record<string, string> };
+type ActionData = {
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  success?: boolean;
+  invitedEmail?: string;
+  invitedName?: string;
+  invitedRole?: string;
+  emailSent?: boolean;
+};
 
 export async function action({ request }: Route.ActionArgs) {
   const current = await requireSystemsAdmin(request);
@@ -32,7 +41,6 @@ export async function action({ request }: Route.ActionArgs) {
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const role = String(formData.get("role") || "EDITOR");
-  const password = String(formData.get("password") || "");
 
   const fieldErrors: Record<string, string> = {};
 
@@ -41,9 +49,6 @@ export async function action({ request }: Route.ActionArgs) {
   if (!isValidRole(role) || !ASSIGNABLE_ROLES.some((r) => r.value === role)) {
     fieldErrors.role = `Select a valid role (${VALID_ROLES.join(", ")}).`;
   }
-
-  const pwCheck = validatePassword(password);
-  if (!pwCheck.valid) fieldErrors.password = pwCheck.error || "Weak password.";
 
   if (Object.keys(fieldErrors).length > 0) {
     return data<ActionData>({ fieldErrors }, { status: 400 });
@@ -57,11 +62,37 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  const passwordHash = await hashPassword(password);
+  // Generate a strong one-time password and require a change on first sign-in.
+  const tempPassword = generateTempPassword();
+  const passwordHash = await hashPassword(tempPassword);
   const created = await db.adminUser.create({
-    data: { name, email, role: role as never, passwordHash },
+    data: {
+      name,
+      email,
+      role: role as never,
+      passwordHash,
+      mustChangePassword: true,
+    },
     select: { id: true },
   });
+
+  // Email the invitation with the temporary credentials.
+  let emailSent = false;
+  try {
+    const result = await sendAdminInviteEmail({
+      to: email,
+      name,
+      tempPassword,
+      role,
+      inviterName: current.name,
+    });
+    emailSent = result.success;
+    if (!result.success) {
+      console.error("Failed to send admin invite email:", result.error);
+    }
+  } catch (error) {
+    console.error("Failed to send admin invite email:", error);
+  }
 
   try {
     await db.auditLog.create({
@@ -70,7 +101,7 @@ export async function action({ request }: Route.ActionArgs) {
         resource: "admin_users",
         resourceId: created.id,
         userId: current.id,
-        details: { email, name, role },
+        details: { email, name, role, invited: true, emailSent },
         ipAddress:
           request.headers.get("X-Forwarded-For") ||
           request.headers.get("X-Real-IP") ||
@@ -82,7 +113,13 @@ export async function action({ request }: Route.ActionArgs) {
     console.error("Failed to write audit log:", error);
   }
 
-  return redirect("/admin/users");
+  return data<ActionData>({
+    success: true,
+    invitedEmail: email,
+    invitedName: name,
+    invitedRole: role,
+    emailSent,
+  });
 }
 
 export default function AdminUserNew() {
@@ -90,6 +127,68 @@ export default function AdminUserNew() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const errors = actionData?.fieldErrors || {};
+
+  // Success: invitation created and (attempted) emailed.
+  if (actionData?.success) {
+    return (
+      <div className="max-w-2xl space-y-8">
+        <div>
+          <Link
+            to="/admin/users"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to team
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-2xl ring-1 ring-gray-200/70 shadow-sm p-6 sm:p-8">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">Admin invited</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            <span className="font-medium text-gray-900">{actionData.invitedName}</span> (
+            <span className="font-mono">{actionData.invitedEmail}</span>) has been added as{" "}
+            <span className="font-medium">{actionData.invitedRole}</span>.
+          </p>
+
+          {actionData.emailSent ? (
+            <div className="mt-4 rounded-xl bg-green-50 text-green-800 ring-1 ring-inset ring-green-100 px-4 py-3 text-sm">
+              An invitation email with temporary login details has been sent to{" "}
+              <span className="font-medium">{actionData.invitedEmail}</span>. They will be required to
+              set a new password on first sign-in before accessing the dashboard.
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-100 px-4 py-3 text-sm">
+              The account was created, but the invitation email could not be sent. Please verify the
+              email service configuration and re-issue credentials from the user's edit page.
+            </div>
+          )}
+
+          <div className="mt-6 flex items-center gap-3">
+            <Link
+              to="/admin/users"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors"
+            >
+              Back to team
+            </Link>
+            <Link
+              to="/admin/users/new"
+              reloadDocument
+              className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900"
+            >
+              Invite another
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -106,7 +205,8 @@ export default function AdminUserNew() {
         </Link>
         <h1 className="mt-3 text-2xl font-bold text-gray-900">Create a new admin</h1>
         <p className="mt-1 text-sm text-gray-600">
-          The new admin can sign in immediately with the email and password you set.
+          A secure temporary password is generated automatically and emailed to the new admin. They
+          must set their own password on first sign-in before accessing the dashboard.
         </p>
       </div>
 
@@ -170,34 +270,13 @@ export default function AdminUserNew() {
           {errors.role && <p className="mt-1.5 text-xs text-red-600">{errors.role}</p>}
         </div>
 
-        {/* Password */}
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Temporary password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="text"
-            autoComplete="new-password"
-            required
-            className="block w-full px-4 py-2.5 bg-gray-50 rounded-xl text-gray-900 ring-1 ring-inset ring-gray-200 focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all font-mono"
-            placeholder="At least 12 characters"
-          />
-          <p className="mt-1.5 text-xs text-gray-500">
-            Minimum 12 characters with an uppercase letter, a lowercase letter, and a number.
-            Share it securely; ask the user to change it after first login.
-          </p>
-          {errors.password && <p className="mt-1.5 text-xs text-red-600">{errors.password}</p>}
-        </div>
-
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
             disabled={isSubmitting}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? "Creating..." : "Create admin"}
+            {isSubmitting ? "Sending invite..." : "Create & send invite"}
           </button>
           <Link
             to="/admin/users"

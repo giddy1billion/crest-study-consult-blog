@@ -1,7 +1,8 @@
 import type { Route } from "./+types/admin-comments";
 import { data, Form, Link, useNavigation, useActionData } from "react-router";
 import { db } from "~/utils/db.server";
-import { requireAdmin } from "~/utils/session.server";
+import { requireAdmin, getAdminUser } from "~/utils/session.server";
+import { recordAdminAudit, AUDIT_ACTIONS, AUDIT_RESOURCES } from "~/utils/audit.server";
 import { sendCommentApprovalEmail } from "~/utils/email.server";
 import { BRAND } from "~/utils/constants";
 import { useState, useEffect } from "react";
@@ -55,6 +56,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const actor = await getAdminUser(request);
   const formData = await request.formData();
   const commentId = formData.get("commentId") as string;
   const intent = formData.get("intent") as string;
@@ -77,6 +79,13 @@ export async function action({ request }: Route.ActionArgs) {
 
       await db.comment.update({ where: { id: commentId }, data: { status: "APPROVED" } });
 
+      await recordAdminAudit(actor, {
+        request,
+        action: AUDIT_ACTIONS.APPROVE_COMMENT,
+        resource: AUDIT_RESOURCES.COMMENTS,
+        resourceId: commentId,
+      });
+
       // Send approval notification email (non-blocking)
       if (commentToApprove?.authorEmail) {
         const articleUrl = `${BRAND.url}/${commentToApprove.post.category.slug}/${commentToApprove.post.slug}`;
@@ -93,14 +102,32 @@ export async function action({ request }: Route.ActionArgs) {
     
     case "spam":
       await db.comment.update({ where: { id: commentId }, data: { status: "SPAM" } });
+      await recordAdminAudit(actor, {
+        request,
+        action: AUDIT_ACTIONS.SPAM_COMMENT,
+        resource: AUDIT_RESOURCES.COMMENTS,
+        resourceId: commentId,
+      });
       return data({ success: true, message: "Comment marked as spam" });
     
     case "delete":
       await db.comment.update({ where: { id: commentId }, data: { status: "DELETED" } });
+      await recordAdminAudit(actor, {
+        request,
+        action: AUDIT_ACTIONS.DELETE_COMMENT,
+        resource: AUDIT_RESOURCES.COMMENTS,
+        resourceId: commentId,
+      });
       return data({ success: true, message: "Comment deleted" });
     
     case "restore":
       await db.comment.update({ where: { id: commentId }, data: { status: "PENDING" } });
+      await recordAdminAudit(actor, {
+        request,
+        action: AUDIT_ACTIONS.RESTORE_COMMENT,
+        resource: AUDIT_RESOURCES.COMMENTS,
+        resourceId: commentId,
+      });
       return data({ success: true, message: "Comment restored to pending" });
     
     case "bulk-approve":
@@ -119,6 +146,13 @@ export async function action({ request }: Route.ActionArgs) {
         await db.comment.updateMany({
           where: { id: { in: approveIds } },
           data: { status: "APPROVED" },
+        });
+
+        await recordAdminAudit(actor, {
+          request,
+          action: AUDIT_ACTIONS.BULK_MODERATE_COMMENTS,
+          resource: AUDIT_RESOURCES.COMMENTS,
+          details: { operation: "approve", count: approveIds.length, ids: approveIds },
         });
 
         // Send approval notification emails (non-blocking)
@@ -144,6 +178,12 @@ export async function action({ request }: Route.ActionArgs) {
           where: { id: { in: spamIds } },
           data: { status: "SPAM" },
         });
+        await recordAdminAudit(actor, {
+          request,
+          action: AUDIT_ACTIONS.BULK_MODERATE_COMMENTS,
+          resource: AUDIT_RESOURCES.COMMENTS,
+          details: { operation: "spam", count: spamIds.length, ids: spamIds },
+        });
       }
       return data({ success: true, message: `${spamIds.length} comments marked as spam` });
     
@@ -167,7 +207,7 @@ export async function action({ request }: Route.ActionArgs) {
       }
       
       // Create the reply as an auto-approved comment
-      await db.comment.create({
+      const reply = await db.comment.create({
         data: {
           content: replyContent.trim(),
           authorName: `${adminName} (Crest Study Consult Team)`,
@@ -177,7 +217,15 @@ export async function action({ request }: Route.ActionArgs) {
           status: "APPROVED", // Admin replies are auto-approved
         },
       });
-      
+
+      await recordAdminAudit(actor, {
+        request,
+        action: AUDIT_ACTIONS.REPLY_COMMENT,
+        resource: AUDIT_RESOURCES.COMMENTS,
+        resourceId: reply.id,
+        details: { parentId: commentId, postId: parentComment.postId },
+      });
+
       return data({ success: true, message: "Reply posted successfully" });
     
     default:

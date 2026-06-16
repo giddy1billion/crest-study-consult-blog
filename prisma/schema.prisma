@@ -159,6 +159,10 @@ model AdminUser {
   tokenVersion Int       @default(0) // Incremented to revoke all active JWT sessions
   lastLoginAt  DateTime? // Last successful login timestamp
 
+  // First-login password policy
+  mustChangePassword Boolean   @default(false) // Force a password change before dashboard access
+  passwordChangedAt  DateTime? // When the password was last changed
+
   otps AdminOtp[]
 
   @@index([email])

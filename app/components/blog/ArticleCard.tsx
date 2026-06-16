@@ -80,7 +80,7 @@ export function ArticleCard({
             />
           )}
           <CardContent className="pt-4">
-            <CategoryPill category={article.category} size="sm" />
+            <CategoryPill category={article.category} size="sm" asLink={false} />
             <h2 className="text-2xl font-semibold text-gray-900 group-hover:text-teal-600 transition-colors mt-3">
               {article.title}
             </h2>
@@ -125,7 +125,7 @@ export function ArticleCard({
           />
         )}
         <CardContent className="pt-4">
-          <CategoryPill category={article.category} size="sm" />
+          <CategoryPill category={article.category} size="sm" asLink={false} />
           <h3 className="font-semibold text-gray-900 group-hover:text-teal-600 transition-colors line-clamp-2 mt-2">
             {article.title}
           </h3>
